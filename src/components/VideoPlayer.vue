@@ -33,11 +33,9 @@ onMounted(() => {
   player.value = videojs(videoPlayer.value, props.options)
 
   player.value.on('timeupdate', () => {
-    const currentTime = player.value.currentTime()
-    const videoDuration = player.value.duration()
-    store.currentTime = currentTime
+    store.currentTime = player.value.currentTime()
 
-    if (currentTime === videoDuration) {
+    if (player.value.ended()) {
       store.playFlag = false
     }
   })

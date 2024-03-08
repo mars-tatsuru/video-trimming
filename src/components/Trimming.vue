@@ -68,9 +68,11 @@ const handleMouseUp = (e: MouseEvent) => {
 }
 
 const handleMouseDbClick = (e: MouseEvent) => {
-  progressBarPosition.value = e.clientX - progressBar.value!.offsetWidth / 2 - 110
-  store.currentTime =
-    store.videoDuration * (progressBarPosition.value / trimmingSlider.value!.clientWidth)
+  if (!store.playFlag) {
+    progressBarPosition.value = e.clientX - progressBar.value!.offsetWidth / 2 - 110
+    store.currentTime =
+      store.videoDuration * (progressBarPosition.value / trimmingSlider.value!.clientWidth)
+  }
 }
 
 const handleMouseMove = (e: MouseEvent) => {
