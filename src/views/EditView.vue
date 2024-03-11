@@ -17,7 +17,8 @@ const videoOptions = {
   controls: false,
   sources: [
     {
-      src: '/src/assets/sample.mp4',
+      // src: '/src/assets/sample.mp4',
+      src: URL.createObjectURL(store.videoData!),
       type: 'video/mp4'
     }
   ],
