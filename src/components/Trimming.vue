@@ -1,8 +1,5 @@
 <script setup lang="ts">
 import { type Ref, ref, onMounted, computed, onBeforeUnmount, watch } from 'vue'
-import videojs from 'video.js'
-import { useLocalStorage, useMouse, usePreferredDark } from '@vueuse/core'
-
 import 'video.js/dist/video-js.css'
 import { mainStore } from '@/stores/main'
 
