@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import VideoPlayer from '@/components/VideoPlayer.vue'
 import Trimming from '@/components/Trimming.vue'
 import { mainStore } from '@/stores/main'
+import { useRouter } from 'vue-router'
 
 /****************************************
- * store
+ * store and router
  ****************************************/
 const store = mainStore()
+const router = useRouter()
 
 /****************************************
  * videoOptions
@@ -17,8 +19,7 @@ const videoOptions = {
   controls: false,
   sources: [
     {
-      // src: '/src/assets/sample.mp4',
-      src: URL.createObjectURL(store.videoData!),
+      src: store.videoData ? URL.createObjectURL(store.videoData) : null,
       type: 'video/mp4'
     }
   ],
@@ -26,6 +27,15 @@ const videoOptions = {
   enableSmoothSeeking: true,
   liveui: true
 }
+
+/****************************************
+ * onMounted
+ ****************************************/
+onMounted(() => {
+  if (videoOptions.sources[0].src === null) {
+    router.push('/')
+  }
+})
 </script>
 
 <template>
