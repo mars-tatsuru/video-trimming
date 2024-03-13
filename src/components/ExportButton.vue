@@ -38,28 +38,28 @@ async function trimVideo(inputFile: string, startTime: string, duration: string)
     workerURL: await toBlobURL(`${baseURL}/ffmpeg-core.worker.js`, 'text/javascript')
   })
 
-  console.log('ffmpeg loaded')
+  console.warn('ffmpeg loaded')
 
   // Write the file to use in FFmpeg
   await ffmpeg.writeFile('input.mp4', await fetchFile(inputFile))
 
-  console.log('input.mp4 written')
+  console.warn('input.mp4 written')
 
   // Run FFmpeg command to trim the video
   // too long to wait
   await ffmpeg.exec(['-i', 'input.mp4', '-ss', startTime, '-t', duration, 'output.mp4'])
 
-  console.log('output.mp4 written')
+  console.warn('output.mp4 written')
 
   // Read the result
   const data = await ffmpeg.readFile('output.mp4')
 
-  console.log('output.mp4 read')
+  console.warn('output.mp4 read')
 
   // Create a URL for the output file to be used in the browser
   const url = URL.createObjectURL(new Blob([(data as Uint8Array).buffer], { type: 'video/mp4' }))
 
-  console.log('URL created')
+  console.warn('URL created')
 
   return url
 }
