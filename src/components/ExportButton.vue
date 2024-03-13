@@ -26,9 +26,9 @@ const props = defineProps({
 })
 
 /****************************************
- * exportFile
+ * exportFile logic
  ****************************************/
-async function trimVideo(inputFile: any, startTime: string, duration: string) {
+async function trimVideo(inputFile: string, startTime: string, duration: string) {
   const ffmpeg = new FFmpeg()
   const baseURL = 'https://unpkg.com/@ffmpeg/core-mt@0.12.6/dist/esm'
 
@@ -46,6 +46,7 @@ async function trimVideo(inputFile: any, startTime: string, duration: string) {
   console.log('input.mp4 written')
 
   // Run FFmpeg command to trim the video
+  // too long to wait
   await ffmpeg.exec(['-i', 'input.mp4', '-ss', startTime, '-t', duration, 'output.mp4'])
 
   console.log('output.mp4 written')
@@ -63,8 +64,35 @@ async function trimVideo(inputFile: any, startTime: string, duration: string) {
   return url
 }
 
+/****************************************
+ * formatTime
+ ****************************************/
+function formatTime(seconds: number) {
+  // calculate hours, minutes, seconds
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  const remainingSeconds = seconds % 60
+
+  // format hours, minutes, seconds
+  const formattedHours = hours < 10 ? '0' + hours : hours
+  const formattedMinutes = minutes < 10 ? '0' + minutes : minutes
+  const formattedSeconds = remainingSeconds < 10 ? '0' + remainingSeconds : remainingSeconds
+
+  // return like '00:00:00'
+  return formattedHours + ':' + formattedMinutes + ':' + formattedSeconds
+}
+
+/****************************************
+ * handle exportFile
+ ****************************************/
 const handleVideoExport = () => {
-  trimVideo('/src/assets/sample.mp4', '00:00:10', '10').then((trimmedVideoUrl) => {
+  store.waitingForFormatVideoFlag = true
+
+  trimVideo(
+    '/src/assets/sample.mp4',
+    formatTime(Math.floor(store.currentTime)),
+    `${store.videoDuration}`
+  ).then((trimmedVideoUrl) => {
     const downloadLink = document.createElement('a')
     downloadLink.download = 'video.mp4'
 
@@ -74,13 +102,100 @@ const handleVideoExport = () => {
     document.body.appendChild(downloadLink)
     downloadLink.click()
     downloadLink.remove()
+
+    store.waitingForFormatVideoFlag = false
   })
 }
 </script>
 
 <template>
   <div class="exportButton">
-    <button @click="handleVideoExport">ダウンロードする</button>
+    <button
+      :class="{ waitingDownload: store.waitingForFormatVideoFlag }"
+      @click="handleVideoExport"
+    >
+      <span class="download" v-if="!store.waitingForFormatVideoFlag">
+        <svg
+          class="downloadIcon"
+          xmlns="http://www.w3.org/2000/svg"
+          width="1em"
+          height="1em"
+          viewBox="0 0 24 24"
+        >
+          <path
+            fill="currentColor"
+            d="m12 16l-5-5l1.4-1.45l2.6 2.6V4h2v8.15l2.6-2.6L17 11zm-6 4q-.825 0-1.412-.587T4 18v-3h2v3h12v-3h2v3q0 .825-.587 1.413T18 20z"
+          />
+        </svg>
+        ダウンロードする
+      </span>
+      <span class="waitingDownload" v-if="store.waitingForFormatVideoFlag">
+        <svg
+          class="waitingDownloadIcon"
+          xmlns="http://www.w3.org/2000/svg"
+          width="1em"
+          height="1em"
+          viewBox="0 0 24 24"
+        >
+          <circle cx="12" cy="3.5" r="1.5" fill="currentColor" opacity="0">
+            <animateTransform
+              attributeName="transform"
+              calcMode="discrete"
+              dur="2.4s"
+              repeatCount="indefinite"
+              type="rotate"
+              values="0 12 12;90 12 12;180 12 12;270 12 12"
+            />
+            <animate
+              attributeName="opacity"
+              dur="0.6s"
+              keyTimes="0;0.5;1"
+              repeatCount="indefinite"
+              values="1;1;0"
+            />
+          </circle>
+          <circle cx="12" cy="3.5" r="1.5" fill="currentColor" opacity="0">
+            <animateTransform
+              attributeName="transform"
+              begin="0.2s"
+              calcMode="discrete"
+              dur="2.4s"
+              repeatCount="indefinite"
+              type="rotate"
+              values="30 12 12;120 12 12;210 12 12;300 12 12"
+            />
+            <animate
+              attributeName="opacity"
+              begin="0.2s"
+              dur="0.6s"
+              keyTimes="0;0.5;1"
+              repeatCount="indefinite"
+              values="1;1;0"
+            />
+          </circle>
+          <circle cx="12" cy="3.5" r="1.5" fill="currentColor" opacity="0">
+            <animateTransform
+              attributeName="transform"
+              begin="0.4s"
+              calcMode="discrete"
+              dur="2.4s"
+              repeatCount="indefinite"
+              type="rotate"
+              values="60 12 12;150 12 12;240 12 12;330 12 12"
+            />
+            <animate
+              attributeName="opacity"
+              begin="0.4s"
+              dur="0.6s"
+              keyTimes="0;0.5;1"
+              repeatCount="indefinite"
+              values="1;1;0"
+            />
+          </circle>
+        </svg>
+        ダウンロード中...
+      </span>
+    </button>
   </div>
 </template>
 
@@ -90,12 +205,35 @@ const handleVideoExport = () => {
   justify-content: flex-end;
 
   button {
+    display: flex;
+    align-items: center;
     padding: 10px 20px;
-    background-color: #f00;
+    background-color: #4ee467;
     color: #fff;
     border: none;
     border-radius: 5px;
     cursor: pointer;
+
+    &.waitingDownload {
+      background-color: #f5f5f5;
+      color: #000;
+      cursor: not-allowed;
+      border: 1px solid #000;
+    }
+
+    span {
+      display: flex;
+      align-items: center;
+      font-size: 14px;
+      font-weight: bold;
+      line-height: 1;
+
+      svg {
+        width: 20px;
+        height: 20px;
+        margin-right: 5px;
+      }
+    }
   }
 }
 </style>

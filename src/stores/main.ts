@@ -6,6 +6,7 @@ export const mainStore = defineStore('counter', () => {
   const currentTime = ref<number>(0)
   const videoDuration = ref<number>(0)
   const playFlag = ref<boolean>(false)
+  const waitingForFormatVideoFlag = ref<boolean>(false)
 
   const startAndStop = (flag: boolean) => {
     if (!flag) {
@@ -14,5 +15,13 @@ export const mainStore = defineStore('counter', () => {
       playFlag.value = false
     }
   }
-  return { videoData, currentTime, videoDuration, playFlag, startAndStop }
+
+  return {
+    videoData,
+    currentTime,
+    videoDuration,
+    playFlag,
+    waitingForFormatVideoFlag,
+    startAndStop
+  }
 })
