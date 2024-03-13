@@ -1,16 +1,40 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue'
 import VideoPlayer from '@/components/VideoPlayer.vue'
 import Trimming from '@/components/Trimming.vue'
 import exportButton from '@/components/ExportButton.vue'
 import { mainStore } from '@/stores/main'
 import { useRouter } from 'vue-router'
+import { cloneDeep, isEqual, isUndefined } from 'lodash-es'
 
 /****************************************
  * store and router
  ****************************************/
 const store = mainStore()
 const router = useRouter()
+
+/****************************************
+ * data
+ ****************************************/
+const beforeForm = ref<any>({})
+const form = ref<any>({}) // SettingSchema is a type definition
+const isEditing = computed(() => {
+  return !isEqual(beforeForm.value, form.value)
+})
+
+/********************************************
+ * confirm Whether it has changed from before
+ ********************************************/
+function init() {
+  // Save the current time data in the store.
+  form.value = cloneDeep(0)
+  // Save he current time before editing for the purpose of comparing it with the data after editing in the form.
+  beforeForm.value = cloneDeep(store.currentTime)
+}
+
+function resetForm() {
+  form.value = beforeForm.value
+}
 
 /****************************************
  * videoOptions
@@ -33,10 +57,37 @@ const videoOptions = {
  * onMounted
  ****************************************/
 onMounted(() => {
+  init()
+
   if (videoOptions.sources[0].src === null) {
     router.push('/')
   }
 })
+
+/****************************************
+ * beforeEach
+ ****************************************/
+// Display an alert if the edited data has not been saved before navigating to another page.
+router.beforeEach((to, from, next) => {
+  if (isEditing.value) {
+    const answer = window.confirm('編集中のデータが全て破棄されますが、よろしいですか？')
+    if (answer) {
+      resetForm()
+      next()
+    } else {
+      next(false)
+    }
+  } else {
+    next()
+  }
+})
+
+watch(
+  () => store.currentTime,
+  () => {
+    init()
+  }
+)
 </script>
 
 <template>
