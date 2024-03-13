@@ -1,0 +1,35 @@
+services:
+  db:
+    image: mysql:8.0.33
+    #Macbook m1を使用しているためplantformを指定
+    platform: linux/amd64
+    container_name: mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: ユーザ名
+      MYSQL_PASSWORD: パスワード
+      MYSQL_DATABASE: trello
+      TZ: 'Asia/Tokyo'
+    volumes:
+      - db-data:/var/lib/mysql
+    ports:
+      - 3307:3306
+    command: --default-authentication-plugin=mysql_native_password
+
+  backend:
+    image: node:18-slim
+    volumes:
+      - ./backend:/usr/src/app
+    working_dir: /usr/src/app
+    command: bash -c "npm install && npm start"
+    ports:
+      - 3000:3000
+    depends_on:
+      - db
+    #URLはlocalhostではなく、docker-composeで指定しているservicesのdbを指定
+    environment:
+      DATABASE_URL: mysql://ユーザー名:パスワード@db:3306/trello
+
+volumes:
+  db-data:
