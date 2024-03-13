@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { type Ref, ref, onMounted, onBeforeUnmount, watch, computed } from 'vue'
 import { mainStore } from '@/stores/main'
+import { FFmpeg } from '@ffmpeg/ffmpeg'
+import { fetchFile, toBlobURL } from '@ffmpeg/util'
 
 /****************************************
  * store
@@ -26,39 +28,59 @@ const props = defineProps({
 /****************************************
  * exportFile
  ****************************************/
-const exportVideo = () => {
-  const downloadLink = document.createElement('a')
-  downloadLink.download = 'video.mp4'
+async function trimVideo(inputFile: any, startTime: string, duration: string) {
+  const ffmpeg = new FFmpeg()
+  const baseURL = 'https://unpkg.com/@ffmpeg/core-mt@0.12.6/dist/esm'
 
-  // cut currentTime and EndTime
-  const videoDuration = store.videoDuration
-  const videoDataSize = Math.floor(store.videoData?.size as number)
-  const currentTime = store.currentTime
-
-  const TrimSize = Math.floor((videoDataSize! * (videoDuration - currentTime)) / videoDuration)
-  const videoBlob = store.videoData as Blob
-
-  // videoBlobをTrimSizeに切り取る
-  const trimmedBlob = new Blob([videoBlob.slice(TrimSize, videoDataSize)], {
-    type: 'video/mp4'
+  await ffmpeg.load({
+    coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+    wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+    workerURL: await toBlobURL(`${baseURL}/ffmpeg-core.worker.js`, 'text/javascript')
   })
 
-  const originalVideoBlob = new Blob([videoBlob], {
-    type: 'video/mp4'
+  console.log('ffmpeg loaded')
+
+  // Write the file to use in FFmpeg
+  await ffmpeg.writeFile('input.mp4', await fetchFile(inputFile))
+
+  console.log('input.mp4 written')
+
+  // Run FFmpeg command to trim the video
+  await ffmpeg.exec(['-i', 'input.mp4', '-ss', startTime, '-t', duration, 'output.mp4'])
+
+  console.log('output.mp4 written')
+
+  // Read the result
+  const data = await ffmpeg.readFile('output.mp4')
+
+  console.log('output.mp4 read')
+
+  // Create a URL for the output file to be used in the browser
+  const url = URL.createObjectURL(new Blob([(data as Uint8Array).buffer], { type: 'video/mp4' }))
+
+  console.log('URL created')
+
+  return url
+}
+
+const handleVideoExport = () => {
+  trimVideo('/src/assets/sample.mp4', '00:00:10', '10').then((trimmedVideoUrl) => {
+    const downloadLink = document.createElement('a')
+    downloadLink.download = 'video.mp4'
+
+    downloadLink.href = trimmedVideoUrl
+
+    downloadLink.setAttribute('hidden', 'true')
+    document.body.appendChild(downloadLink)
+    downloadLink.click()
+    downloadLink.remove()
   })
-
-  downloadLink.href = URL.createObjectURL(originalVideoBlob)
-
-  downloadLink.setAttribute('hidden', 'true')
-  document.body.appendChild(downloadLink)
-  downloadLink.click()
-  downloadLink.remove()
 }
 </script>
 
 <template>
   <div class="exportButton">
-    <button @click="exportVideo">ダウンロードする</button>
+    <button @click="handleVideoExport">ダウンロードする</button>
   </div>
 </template>
 

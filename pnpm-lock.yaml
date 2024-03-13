@@ -11,6 +11,9 @@ dependencies:
   '@ffmpeg/util':
     specifier: ^0.12.1
     version: 0.12.1
+  '@types/ffmpeg':
+    specifier: ^1.0.7
+    version: 1.0.7
   '@types/video.js':
     specifier: ^7.3.57
     version: 7.3.57
@@ -896,6 +899,10 @@ packages:
   /@types/estree@1.0.5:
     resolution: {integrity: sha512-/kYRxGDLWzHOB7q+wtSUQlFrtcdUccpfy+X+9iMBpHK8QLLhx2wIPYuS5DYtR9Wa/YlZAbIovy7qVdB1Aq6Lyw==}
     dev: true
+
+  /@types/ffmpeg@1.0.7:
+    resolution: {integrity: sha512-7Pw61IDG9Tj+gXGNshJ7JIM2fhDe0IrK7/F+b8midmsiljiugWKbW5KoNmhtZS3pPXWVfVHP3wOwquF/wbVxiw==}
+    dev: false
 
   /@types/jsdom@21.1.6:
     resolution: {integrity: sha512-/7kkMsC+/kMs7gAYmmBR9P0vGTnOoLhQhyhQJSlXGI5bzTHp6xdo0TtKWQAsz6pmSAeVqKSbqeyP6hytqr9FDw==}
