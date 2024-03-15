@@ -21,9 +21,11 @@ const wrongFileType = ref(false)
  * helpers
  ****************************************/
 const isLargeFile = (fileSize: number) => {
-  if (fileSize > 52428800) {
+  if (fileSize > 10737418240) {
+    console.log('file size is too large')
     return true
   }
+  console.log('file size is OK')
   return false
 }
 

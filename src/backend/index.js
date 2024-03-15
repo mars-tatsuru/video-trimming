@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.mainFunction = void 0;
 const fastify_1 = __importDefault(require("fastify"));
 const fluent_ffmpeg_1 = __importDefault(require("fluent-ffmpeg"));
 const fs_1 = require("fs");
@@ -50,65 +51,105 @@ function onError(err) {
     process.exitCode = 1;
 }
 /*******************************************************
- * MAIN FUNCTIONS
+ * MERGE FUNCTIONS
  *******************************************************/
-function merge(prePath, inputPath) {
+// function merge(prePath: string, inputPath: string) {
+//   return new Promise<void>((resolve, reject) => {
+//     const inputName = basename(inputPath) //sample.mp4
+//     ffmpeg(prePath)
+//       .input(inputPath)
+//       .on('error', reject)
+//       .on('start', () => {
+//         console.log(`Start merging for ${inputName}`)
+//       })
+//       .on('end', () => {
+//         console.log(`${inputName} merged`)
+//         resolve()
+//       })
+//       .mergeToFile(join(FOLDERS.OUTPUT, inputName), FOLDERS.TEMP)
+//   })
+// }
+// async function mergeAll() {
+//   try {
+//     const prerollFiles = await fsPromises.readdir(FOLDERS.PREROLL)
+//     if (!isArray(prerollFiles) || prerollFiles.length === 0) {
+//       throw new Error(EORRORS.PREROLL)
+//     }
+//     let preroll: string | undefined = undefined
+//     // p is fileName( sample.mp4 ) not path
+//     for (const p of prerollFiles) {
+//       const apPath = join(FOLDERS.PREROLL, p) // preroll/sample.mp4
+//       const stats = await fsPromises.stat(apPath) // return stats object
+//       // Stats {
+//       //   dev: 16777230,
+//       //   mode: 33188,
+//       //   nlink: 1,
+//       //   uid: 501,
+//       //   gid: 20,
+//       //   rdev: 0,
+//       //   blksize: 4096,
+//       //   ino: 58533411,
+//       //   size: 12040751,
+//       //   blocks: 23520,
+//       //   atimeMs: 1710483289658.244,
+//       //   mtimeMs: 1709817703566.6355,
+//       //   ctimeMs: 1710483335736.4458,
+//       //   birthtimeMs: 1709817703003.4377,
+//       //   atime: 2024-03-15T06:14:49.658Z,
+//       //   mtime: 2024-03-07T13:21:43.567Z,
+//       //   ctime: 2024-03-15T06:15:35.736Z,
+//       //   birthtime: 2024-03-07T13:21:43.003Z
+//       // }
+//       if (!stats.isDirectory()) {
+//         preroll = apPath
+//         break
+//       }
+//     }
+//     if (isEmpty(preroll)) {
+//       throw new Error(EORRORS.PREROLL)
+//     }
+//     const inputFiles = await fsPromises.readdir(FOLDERS.INPUT)
+//     if (!isArray(inputFiles) || inputFiles.length === 0) {
+//       throw new Error(EORRORS.INPUT)
+//     }
+//     for (const i of inputFiles) {
+//       const iPath = join(FOLDERS.INPUT, i) // input/sample.mp4
+//       const stat = await fsPromises.stat(iPath) // return stats object
+//       if (!stat.isDirectory()) {
+//         await merge(<string>preroll, iPath)
+//       }
+//     }
+//   } catch (err) {
+//     onError(err as Error)
+//   }
+// }
+/*******************************************************
+ * TRIM FUNCTIONS
+ *******************************************************/
+async function trimVideo(inputPath, startTime, endTime) {
     return new Promise((resolve, reject) => {
-        const inputName = (0, path_1.basename)(inputPath);
-        console.log(`baseItem ${inputName}`);
-        (0, fluent_ffmpeg_1.default)(prePath)
-            .input(inputPath)
+        const inputName = (0, path_1.basename)(inputPath); //sample.mp4
+        (0, fluent_ffmpeg_1.default)(inputPath)
+            .inputOptions([`-ss ${startTime}`, `-t ${endTime}`])
+            .outputOptions(['-c copy'])
             .on('error', reject)
             .on('start', () => {
-            console.log(`Start merging for ${inputName}`);
+            console.log(`Start trimming for ${inputName}`);
         })
             .on('end', () => {
-            console.log(`${inputName} merged`);
-            resolve();
+            console.log(`${inputName} trimmed`);
+            const outputPath = (0, path_1.join)(FOLDERS.OUTPUT, inputName);
+            resolve(outputPath);
         })
-            .mergeToFile((0, path_1.join)(FOLDERS.OUTPUT, inputName), FOLDERS.TEMP);
+            .save((0, path_1.join)(FOLDERS.OUTPUT, inputName));
     });
 }
-async function mergeAll() {
+const mainFunction = async (videoName, videoCurrentTime, videoDuration) => {
     try {
-        const prerollFiles = await fs_1.promises.readdir(FOLDERS.PREROLL);
-        if (!isArray(prerollFiles) || prerollFiles.length === 0) {
-            throw new Error(EORRORS.PREROLL);
-        }
-        let preroll = undefined;
-        // p is fileName( sample.mp4 ) not path
-        for (const p of prerollFiles) {
-            const apPath = (0, path_1.join)(FOLDERS.PREROLL, p); // preroll/sample.mp4
-            const stats = await fs_1.promises.stat(apPath); // return stats object
-            // Stats {
-            //   dev: 16777230,
-            //   mode: 33188,
-            //   nlink: 1,
-            //   uid: 501,
-            //   gid: 20,
-            //   rdev: 0,
-            //   blksize: 4096,
-            //   ino: 58533411,
-            //   size: 12040751,
-            //   blocks: 23520,
-            //   atimeMs: 1710483289658.244,
-            //   mtimeMs: 1709817703566.6355,
-            //   ctimeMs: 1710483335736.4458,
-            //   birthtimeMs: 1709817703003.4377,
-            //   atime: 2024-03-15T06:14:49.658Z,
-            //   mtime: 2024-03-07T13:21:43.567Z,
-            //   ctime: 2024-03-15T06:15:35.736Z,
-            //   birthtime: 2024-03-07T13:21:43.003Z
-            // }
-            if (!stats.isDirectory()) {
-                preroll = apPath;
-                break;
-            }
-        }
-        if (isEmpty(preroll)) {
-            throw new Error(EORRORS.PREROLL);
-        }
-        const inputFiles = await fs_1.promises.readdir(FOLDERS.INPUT);
+        // const inputFiles = await fsPromises.readdir(FOLDERS.INPUT)
+        const inputFiles = [videoName];
+        console.log('inputFiles', inputFiles);
+        let trimmedVideoPath = undefined;
         if (!isArray(inputFiles) || inputFiles.length === 0) {
             throw new Error(EORRORS.INPUT);
         }
@@ -116,28 +157,14 @@ async function mergeAll() {
             const iPath = (0, path_1.join)(FOLDERS.INPUT, i); // input/sample.mp4
             const stat = await fs_1.promises.stat(iPath); // return stats object
             if (!stat.isDirectory()) {
-                await merge(preroll, iPath);
+                trimmedVideoPath = await trimVideo(iPath, videoCurrentTime, videoDuration);
             }
         }
+        return trimmedVideoPath;
     }
     catch (err) {
         onError(err);
+        return 'Error';
     }
-}
-mergeAll();
-/*******************************************************
- * CREATE SERVER
- *******************************************************/
-// server.get('/ping', async (request, reply) => {
-//   return 'pong\n'
-// })
-// server.get('/trim', async (request, reply) => {
-//   return 'trim'
-// })
-// server.listen({ port: 8080 }, (err, address) => {
-//   if (err) {
-//     console.error(err)
-//     process.exit(1)
-//   }
-//   console.log(`Server listening at ${address}`)
-// })
+};
+exports.mainFunction = mainFunction;

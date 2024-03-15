@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "ts": "tsc -p .",
+    "server": "npm run ts && node server.js",
     "start": "npm run ts && node index.js",
     "build": "tsc -p tsconfig.json"
   },
@@ -12,6 +13,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@fastify/cors": "^9.0.1",
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@ffprobe-installer/ffprobe": "^2.1.2",
     "@types/fluent-ffmpeg": "^2.1.24",

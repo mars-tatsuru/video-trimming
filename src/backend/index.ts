@@ -1,6 +1,7 @@
 import fastify from 'fastify'
 import ffmpeg from 'fluent-ffmpeg'
 import { promises as fsPromises } from 'fs'
+import { trim } from 'lodash-es'
 import { basename, join } from 'path'
 
 const server = fastify()
@@ -56,72 +57,123 @@ function onError(err: Error) {
 }
 
 /*******************************************************
- * MAIN FUNCTIONS
+ * MERGE FUNCTIONS
  *******************************************************/
-function merge(prePath: string, inputPath: string) {
-  return new Promise<void>((resolve, reject) => {
+// function merge(prePath: string, inputPath: string) {
+//   return new Promise<void>((resolve, reject) => {
+//     const inputName = basename(inputPath) //sample.mp4
+
+//     ffmpeg(prePath)
+//       .input(inputPath)
+//       .on('error', reject)
+//       .on('start', () => {
+//         console.log(`Start merging for ${inputName}`)
+//       })
+//       .on('end', () => {
+//         console.log(`${inputName} merged`)
+//         resolve()
+//       })
+//       .mergeToFile(join(FOLDERS.OUTPUT, inputName), FOLDERS.TEMP)
+//   })
+// }
+
+// async function mergeAll() {
+//   try {
+//     const prerollFiles = await fsPromises.readdir(FOLDERS.PREROLL)
+
+//     if (!isArray(prerollFiles) || prerollFiles.length === 0) {
+//       throw new Error(EORRORS.PREROLL)
+//     }
+
+//     let preroll: string | undefined = undefined
+
+//     // p is fileName( sample.mp4 ) not path
+//     for (const p of prerollFiles) {
+//       const apPath = join(FOLDERS.PREROLL, p) // preroll/sample.mp4
+//       const stats = await fsPromises.stat(apPath) // return stats object
+//       // Stats {
+//       //   dev: 16777230,
+//       //   mode: 33188,
+//       //   nlink: 1,
+//       //   uid: 501,
+//       //   gid: 20,
+//       //   rdev: 0,
+//       //   blksize: 4096,
+//       //   ino: 58533411,
+//       //   size: 12040751,
+//       //   blocks: 23520,
+//       //   atimeMs: 1710483289658.244,
+//       //   mtimeMs: 1709817703566.6355,
+//       //   ctimeMs: 1710483335736.4458,
+//       //   birthtimeMs: 1709817703003.4377,
+//       //   atime: 2024-03-15T06:14:49.658Z,
+//       //   mtime: 2024-03-07T13:21:43.567Z,
+//       //   ctime: 2024-03-15T06:15:35.736Z,
+//       //   birthtime: 2024-03-07T13:21:43.003Z
+//       // }
+
+//       if (!stats.isDirectory()) {
+//         preroll = apPath
+//         break
+//       }
+//     }
+
+//     if (isEmpty(preroll)) {
+//       throw new Error(EORRORS.PREROLL)
+//     }
+
+//     const inputFiles = await fsPromises.readdir(FOLDERS.INPUT)
+
+//     if (!isArray(inputFiles) || inputFiles.length === 0) {
+//       throw new Error(EORRORS.INPUT)
+//     }
+
+//     for (const i of inputFiles) {
+//       const iPath = join(FOLDERS.INPUT, i) // input/sample.mp4
+//       const stat = await fsPromises.stat(iPath) // return stats object
+
+//       if (!stat.isDirectory()) {
+//         await merge(<string>preroll, iPath)
+//       }
+//     }
+//   } catch (err) {
+//     onError(err as Error)
+//   }
+// }
+
+/*******************************************************
+ * TRIM FUNCTIONS
+ *******************************************************/
+async function trimVideo(inputPath: string, startTime: string, endTime: string) {
+  return new Promise<string>((resolve, reject) => {
     const inputName = basename(inputPath) //sample.mp4
 
-    ffmpeg(prePath)
-      .input(inputPath)
+    ffmpeg(inputPath)
+      .inputOptions([`-ss ${startTime}`, `-t ${endTime}`])
+      .outputOptions(['-c copy'])
       .on('error', reject)
       .on('start', () => {
-        console.log(`Start merging for ${inputName}`)
+        console.log(`Start trimming for ${inputName}`)
       })
       .on('end', () => {
-        console.log(`${inputName} merged`)
-        resolve()
+        console.log(`${inputName} trimmed`)
+        const outputPath = join(FOLDERS.OUTPUT, inputName)
+        resolve(outputPath)
       })
-      .mergeToFile(join(FOLDERS.OUTPUT, inputName), FOLDERS.TEMP)
+      .save(join(FOLDERS.OUTPUT, inputName))
   })
 }
 
-async function mergeAll() {
+export const mainFunction = async (
+  videoName: string,
+  videoCurrentTime: string,
+  videoDuration: string
+) => {
   try {
-    const prerollFiles = await fsPromises.readdir(FOLDERS.PREROLL)
-
-    if (!isArray(prerollFiles) || prerollFiles.length === 0) {
-      throw new Error(EORRORS.PREROLL)
-    }
-
-    let preroll: string | undefined = undefined
-
-    // p is fileName( sample.mp4 ) not path
-    for (const p of prerollFiles) {
-      const apPath = join(FOLDERS.PREROLL, p) // preroll/sample.mp4
-      const stats = await fsPromises.stat(apPath) // return stats object
-      // Stats {
-      //   dev: 16777230,
-      //   mode: 33188,
-      //   nlink: 1,
-      //   uid: 501,
-      //   gid: 20,
-      //   rdev: 0,
-      //   blksize: 4096,
-      //   ino: 58533411,
-      //   size: 12040751,
-      //   blocks: 23520,
-      //   atimeMs: 1710483289658.244,
-      //   mtimeMs: 1709817703566.6355,
-      //   ctimeMs: 1710483335736.4458,
-      //   birthtimeMs: 1709817703003.4377,
-      //   atime: 2024-03-15T06:14:49.658Z,
-      //   mtime: 2024-03-07T13:21:43.567Z,
-      //   ctime: 2024-03-15T06:15:35.736Z,
-      //   birthtime: 2024-03-07T13:21:43.003Z
-      // }
-
-      if (!stats.isDirectory()) {
-        preroll = apPath
-        break
-      }
-    }
-
-    if (isEmpty(preroll)) {
-      throw new Error(EORRORS.PREROLL)
-    }
-
-    const inputFiles = await fsPromises.readdir(FOLDERS.INPUT)
+    // const inputFiles = await fsPromises.readdir(FOLDERS.INPUT)
+    const inputFiles = [videoName]
+    console.log('inputFiles', inputFiles)
+    let trimmedVideoPath: string | undefined = undefined
 
     if (!isArray(inputFiles) || inputFiles.length === 0) {
       throw new Error(EORRORS.INPUT)
@@ -132,31 +184,13 @@ async function mergeAll() {
       const stat = await fsPromises.stat(iPath) // return stats object
 
       if (!stat.isDirectory()) {
-        await merge(<string>preroll, iPath)
+        trimmedVideoPath = await trimVideo(iPath, videoCurrentTime, videoDuration)
       }
     }
+
+    return trimmedVideoPath
   } catch (err) {
     onError(err as Error)
+    return 'Error'
   }
 }
-
-mergeAll()
-
-/*******************************************************
- * CREATE SERVER
- *******************************************************/
-// server.get('/ping', async (request, reply) => {
-//   return 'pong\n'
-// })
-
-// server.get('/trim', async (request, reply) => {
-//   return 'trim'
-// })
-
-// server.listen({ port: 8080 }, (err, address) => {
-//   if (err) {
-//     console.error(err)
-//     process.exit(1)
-//   }
-//   console.log(`Server listening at ${address}`)
-// })
