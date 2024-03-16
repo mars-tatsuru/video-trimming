@@ -50,8 +50,12 @@ const trimmingSlider = ref<HTMLDivElement | null>(null)
 const progressBar = ref<HTMLDivElement | null>(null)
 const cursorType = ref<string>('pointer')
 
+const progressBarPositionCalc = (e: MouseEvent) => {
+  return (progressBarPosition.value = e.clientX - progressBar.value!.offsetWidth / 2 - 112)
+}
+
 const handleMouseDown = (e: MouseEvent) => {
-  progressBarPosition.value = e.clientX - progressBar.value!.offsetWidth / 2 - 110
+  progressBarPosition.value = progressBarPositionCalc(e)
   cursorType.value = 'grabbing'
   isDragging.value = true
 }
@@ -66,7 +70,7 @@ const handleMouseUp = (e: MouseEvent) => {
 
 const handleMouseDbClick = (e: MouseEvent) => {
   if (!store.playFlag) {
-    progressBarPosition.value = e.clientX - progressBar.value!.offsetWidth / 2 - 110
+    progressBarPosition.value = progressBarPositionCalc(e)
     store.currentTime =
       store.videoDuration * (progressBarPosition.value / trimmingSlider.value!.clientWidth)
   }
@@ -74,16 +78,17 @@ const handleMouseDbClick = (e: MouseEvent) => {
 
 const handleMouseMove = (e: MouseEvent) => {
   if (isDragging.value) {
-    if (e.clientX - progressBar.value!.offsetWidth / 2 - 110 < 0) {
+    if (progressBarPositionCalc(e) < 0) {
       progressBarPosition.value = 0
       return
     }
-    progressBarPosition.value = e.clientX - progressBar.value!.offsetWidth / 2 - 110
+    progressBarPosition.value = progressBarPositionCalc(e)
   }
 }
 
 const handleMouseLeave = () => {
   isDragging.value = false
+  // cursorType.value = 'pointer'
 }
 
 const handleMouseClick = (e: MouseEvent) => {

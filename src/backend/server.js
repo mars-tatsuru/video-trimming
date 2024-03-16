@@ -20,6 +20,7 @@ server.get('/trim', async (request, reply) => {
     try {
         const { videoName, videoCurrentTime, videoDuration } = request.query;
         const result = await (0, index_1.mainFunction)(videoName, videoCurrentTime, videoDuration);
+        console.log('result', result);
         reply.send({ result }); // return trimmedVideo path to frontend
     }
     catch (error) {
