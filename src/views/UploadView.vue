@@ -1,7 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue'
-import VideoPlayer from '@/components/VideoPlayer.vue'
-import Trimming from '@/components/Trimming.vue'
+import { ref } from 'vue'
 import { mainStore } from '@/stores/main'
 import { useRouter } from 'vue-router'
 

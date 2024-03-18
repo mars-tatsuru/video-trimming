@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import VideoPlayer from '@/components/VideoPlayer.vue'
 import Trimming from '@/components/Trimming.vue'
 import exportButton from '@/components/ExportButton.vue'
 import { mainStore } from '@/stores/main'
 import { useRouter } from 'vue-router'
-import { cloneDeep, isEqual, isUndefined } from 'lodash-es'
+import { cloneDeep, isEqual } from 'lodash-es'
 
 /****************************************
  * store and router

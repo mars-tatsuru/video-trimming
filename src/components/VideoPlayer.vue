@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { type Ref, ref, onMounted, onBeforeUnmount, watch, computed } from 'vue'
+import { type Ref, ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import videojs from 'video.js'
 import 'video.js/dist/video-js.css'
-import Trimming from './Trimming.vue'
 import { mainStore } from '@/stores/main'
 
 /****************************************
