@@ -86,56 +86,27 @@ function formatTime(seconds: number) {
 /****************************************
  * handle exportFile
  ****************************************/
-// const handleVideoExport = () => {
-//   store.waitingForFormatVideoFlag = true
-
-//   trimVideo(
-//     '/src/assets/sample.mp4',
-//     formatTime(Math.floor(store.currentTime)),
-//     `${store.videoDuration}`
-//   ).then((trimmedVideoUrl) => {
-//     const downloadLink = document.createElement('a')
-//     downloadLink.download = 'video.mp4'
-
-//     downloadLink.href = trimmedVideoUrl
-
-//     downloadLink.setAttribute('hidden', 'true')
-//     document.body.appendChild(downloadLink)
-//     downloadLink.click()
-//     downloadLink.remove()
-
-//     store.waitingForFormatVideoFlag = false
-//   })
-// }
-
-const handleVideoFromApi = async () => {
+const handleVideoExport = () => {
   store.waitingForFormatVideoFlag = true
-  let trimmedVideoUrl = ''
 
-  console.log(store.videoData?.name)
+  trimVideo(
+    '/src/assets/sample.mp4',
+    formatTime(Math.floor(store.currentTime)),
+    `${store.videoDuration}`
+  ).then((trimmedVideoUrl) => {
+    console.log('trimmedVideoUrl', trimmedVideoUrl)
+    const downloadLink = document.createElement('a')
+    downloadLink.download = 'video.mp4'
 
-  await fetch(
-    `http://localhost:8080/trim?videoName=${store.videoData?.name}&videoCurrentTime=${formatTime(Math.floor(store.currentTime))}&videoDuration=${store.videoDuration}`
-  )
-    .then((response) => response.json())
-    .then((data) => {
-      const { result, error } = data
-      console.log(result)
-      trimmedVideoUrl = result
-    })
+    downloadLink.href = trimmedVideoUrl
 
-  const downloadLink = document.createElement('a')
-  downloadLink.download = 'video.mp4'
+    downloadLink.setAttribute('hidden', 'true')
+    document.body.appendChild(downloadLink)
+    downloadLink.click()
+    downloadLink.remove()
 
-  downloadLink.href = `http://localhost:5173/src/backend/${trimmedVideoUrl}`
-  console.log(downloadLink.href)
-
-  downloadLink.setAttribute('hidden', 'true')
-  document.body.appendChild(downloadLink)
-  downloadLink.click()
-  downloadLink.remove()
-
-  store.waitingForFormatVideoFlag = false
+    store.waitingForFormatVideoFlag = false
+  })
 }
 </script>
 
@@ -143,7 +114,7 @@ const handleVideoFromApi = async () => {
   <div class="exportButton">
     <button
       :class="{ waitingDownload: store.waitingForFormatVideoFlag }"
-      @click="handleVideoFromApi"
+      @click="handleVideoExport"
     >
       <span class="download" v-if="!store.waitingForFormatVideoFlag">
         <svg
