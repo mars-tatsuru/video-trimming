@@ -2,6 +2,13 @@ import fastify from 'fastify'
 import cors from '@fastify/cors'
 import { mainFunction } from './index'
 
+//TODO: 実際にサーバーに投げて、そこから動画を取得してトリミングする
+// https://go-tech.blog/nodejs/ts-aws-sdk-s3/#index_id6
+// https://supabase.com/docs/guides/storage/uploads/resumable-uploads
+// https://docs.aws.amazon.com/AmazonS3/latest/userguide/upload-objects.html
+// resumable uploads
+// ffmpegはパスでいけない？？ https://lapoz-ai.com/blog/blog-026/
+
 const server = fastify()
 server.register(cors, {
   origin: '*'
