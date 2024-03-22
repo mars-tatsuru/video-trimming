@@ -1,6 +1,7 @@
 import fastify from 'fastify'
+import multiPart from '@fastify/multipart'
 import cors from '@fastify/cors'
-import { mainFunction } from './index'
+import { mainFunction, postDataToBucket } from './index'
 
 //TODO: 実際にサーバーに投げて、そこから動画を取得してトリミングする
 // https://go-tech.blog/nodejs/ts-aws-sdk-s3/#index_id6
@@ -14,9 +15,15 @@ server.register(cors, {
   origin: '*'
 })
 
+server.register(multiPart)
+
 /*******************************************************
  * CREATE SERVER
  *******************************************************/
+server.get('/', async (request, reply) => {
+  return 'application\n'
+})
+
 server.get('/ping', async (request, reply) => {
   return 'pong\n'
 })
@@ -31,6 +38,24 @@ server.get('/trim', async (request: any, reply: any) => {
   } catch (error: any) {
     reply.status(500).send({ error: error.message }) // return error to frontend
   }
+})
+
+server.post('/video', async (request: any, reply: any) => {
+  try {
+    const { VideoName } = request.query
+    const formData = await request.parts() // マルチパートフォームデータを取得
+    const fileData = formData['file'] // ファイルデータを取得
+
+    console.log('VideoName', VideoName)
+    console.log('fileData', fileData)
+
+    const result = postDataToBucket(VideoName)
+    reply.send({ result })
+  } catch (error: any) {
+    reply.status(500).send({ error: error.message })
+  }
+
+  return 'video\n'
 })
 
 server.listen({ port: 8080 }, (err, address) => {

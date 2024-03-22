@@ -3,6 +3,16 @@ import ffmpeg from 'fluent-ffmpeg'
 import { promises as fsPromises } from 'fs'
 import { trim } from 'lodash-es'
 import { basename, join } from 'path'
+import { cdate } from 'cdate'
+import { load } from 'ts-dotenv'
+import {
+  PutObjectCommand,
+  S3Client,
+  ListObjectsV2Command,
+  ListBucketsCommand
+} from '@aws-sdk/client-s3'
+import { Upload } from '@aws-sdk/lib-storage'
+import { fromIni } from '@aws-sdk/credential-providers'
 
 const server = fastify()
 
@@ -192,5 +202,58 @@ export const mainFunction = async (
   } catch (err) {
     onError(err as Error)
     return 'Error'
+  }
+}
+
+/*******************************************************************
+ * POST AWS S3
+ * ref: https://qiita.com/taisuke101700/items/d7efaca27b33adf29833
+ *******************************************************************/
+const env = load({
+  AWS_ACCESS_KEY_ID: String,
+  AWS_SECRET_ACCESS_KEY: String,
+  REGION: String,
+  BUCKETNAME: String,
+  FILEPATH: String
+})
+
+const client = new S3Client({
+  region: env.REGION,
+  credentials: {
+    accessKeyId: env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: env.AWS_SECRET_ACCESS_KEY
+  }
+})
+
+// export const getBucketContents = async () => {
+//   const command = new ListObjectsV2Command({
+//     Bucket: env.BUCKETNAME,
+//     MaxKeys: 10
+//   })
+
+//   const bucket = await client.send(command)
+//   const bucketContents = bucket.Contents?.map((content) => content.Key).join('\n')
+//   console.log(bucketContents)
+//   return bucket
+// }
+
+// https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/example_s3_PutObject_section.html
+// post data to s3 bucket(test-koike/video)
+export const postDataToBucket = async (VideoName: string) => {
+  const command = new PutObjectCommand({
+    Bucket: `${env.BUCKETNAME}`,
+    Key: `${env.FILEPATH}/${VideoName}`,
+    Body: 'Hello World!',
+    ContentType: 'text/plain'
+  })
+
+  try {
+    const response = await client.send(command)
+    console.log(response)
+
+    return 'Success'
+  } catch (err) {
+    onError(err as Error)
+    console.error(err)
   }
 }

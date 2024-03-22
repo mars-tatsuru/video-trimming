@@ -41,7 +41,7 @@ const isWrongFileType = (fileType: string) => {
 /****************************************
  * onHandler
  ****************************************/
-const onSelected = (e: Event) => {
+const onSelected = async (e: Event) => {
   const fileObj = (e.target as HTMLInputElement)?.files?.[0]
 
   if (fileObj) {
@@ -65,6 +65,25 @@ const onSelected = (e: Event) => {
   }
 
   store.videoData = fileObj
+  console.log(store.videoData)
+
+  let formData = new FormData()
+  formData.append('file', store.videoData as Blob, store.videoData?.name)
+  console.log(formData)
+
+  // await fetch(`http://localhost:8080/video?VideoName=${store.videoData?.name}`, {
+  //   method: 'POST',
+  //   body: formData
+  // })
+  //   .then((response) => response.json())
+  //   .then((data) => {
+  //     const { result, error } = data
+
+  //     if (error) {
+  //       console.error(error)
+  //       return
+  //     }
+  //   })
 
   router.push('/edit')
 }

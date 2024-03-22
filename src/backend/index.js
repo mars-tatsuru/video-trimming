@@ -3,11 +3,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.mainFunction = void 0;
+exports.postDataToBucket = exports.mainFunction = void 0;
 const fastify_1 = __importDefault(require("fastify"));
 const fluent_ffmpeg_1 = __importDefault(require("fluent-ffmpeg"));
 const fs_1 = require("fs");
 const path_1 = require("path");
+const ts_dotenv_1 = require("ts-dotenv");
+const client_s3_1 = require("@aws-sdk/client-s3");
 const server = (0, fastify_1.default)();
 const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
 const ffprobePath = require('@ffprobe-installer/ffprobe').path;
@@ -168,3 +170,51 @@ const mainFunction = async (videoName, videoCurrentTime, videoDuration) => {
     }
 };
 exports.mainFunction = mainFunction;
+/*******************************************************************
+ * POST AWS S3
+ * ref: https://qiita.com/taisuke101700/items/d7efaca27b33adf29833
+ *******************************************************************/
+const env = (0, ts_dotenv_1.load)({
+    AWS_ACCESS_KEY_ID: String,
+    AWS_SECRET_ACCESS_KEY: String,
+    REGION: String,
+    BUCKETNAME: String,
+    FILEPATH: String
+});
+const client = new client_s3_1.S3Client({
+    region: env.REGION,
+    credentials: {
+        accessKeyId: env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: env.AWS_SECRET_ACCESS_KEY
+    }
+});
+// export const getBucketContents = async () => {
+//   const command = new ListObjectsV2Command({
+//     Bucket: env.BUCKETNAME,
+//     MaxKeys: 10
+//   })
+//   const bucket = await client.send(command)
+//   const bucketContents = bucket.Contents?.map((content) => content.Key).join('\n')
+//   console.log(bucketContents)
+//   return bucket
+// }
+// https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/example_s3_PutObject_section.html
+// post data to s3 bucket(test-koike/video)
+const postDataToBucket = async (VideoName) => {
+    const command = new client_s3_1.PutObjectCommand({
+        Bucket: `${env.BUCKETNAME}`,
+        Key: `${env.FILEPATH}/${VideoName}`,
+        Body: 'Hello World!',
+        ContentType: 'text/plain'
+    });
+    try {
+        const response = await client.send(command);
+        console.log(response);
+        return 'Success';
+    }
+    catch (err) {
+        onError(err);
+        console.error(err);
+    }
+};
+exports.postDataToBucket = postDataToBucket;
