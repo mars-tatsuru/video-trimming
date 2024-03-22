@@ -37,7 +37,6 @@ server.get('/trim', async (request, reply) => {
     try {
         const { videoName, videoCurrentTime, videoDuration } = request.query;
         const result = await (0, index_1.mainFunction)(videoName, videoCurrentTime, videoDuration);
-        console.log('result', result);
         reply.send({ result }); // return trimmedVideo path to frontend
     }
     catch (error) {
@@ -48,7 +47,6 @@ server.post('/video', async (request, reply) => {
     try {
         const { VideoName } = request.query;
         const fileData = await request.body.file;
-        console.log('fileData', fileData);
         const result = (0, index_1.postDataToBucket)(VideoName, fileData);
         reply.send({ result });
     }

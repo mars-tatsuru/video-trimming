@@ -37,7 +37,6 @@ server.get('/trim', async (request: any, reply: any) => {
   try {
     const { videoName, videoCurrentTime, videoDuration } = request.query
     const result = await mainFunction(videoName, videoCurrentTime, videoDuration)
-    console.log('result', result)
 
     reply.send({ result }) // return trimmedVideo path to frontend
   } catch (error: any) {
