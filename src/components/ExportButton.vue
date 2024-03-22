@@ -93,7 +93,7 @@ const handleVideoFromApi = async () => {
   console.log(store.videoData?.name)
 
   await fetch(
-    `http://localhost:8080/trim?videoName=${store.videoData?.name}&videoCurrentTime=${formatTime(Math.floor(store.currentTime))}&videoDuration=${store.videoDuration}`
+    `http://localhost:8080/trim?videoName=${store.videoData?.name}&videoCurrentTime=${formatTime(Math.floor(store.currentTime))}&videoDuration=${formatTime(Math.floor(store.videoDuration))}`
   )
     .then((response) => response.json())
     .then((data) => {
