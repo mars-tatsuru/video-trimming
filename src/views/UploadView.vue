@@ -71,6 +71,8 @@ const onSelected = async (e: Event) => {
   const fileData = new FormData()
   fileData.append('file', fileObj!)
 
+  // TODO:大きなデータを上げると遅いので、分割アップロードを実装する
+  // https://zenn.dev/mryhryki/articles/2022-12-01-s3-multipart-upload
   await fetch(`http://localhost:8080/video?VideoName=${store.videoData?.name}`, {
     method: 'POST',
     // 送信するvideoデータを指定

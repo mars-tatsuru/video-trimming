@@ -90,15 +90,12 @@ const handleVideoFromApi = async () => {
   store.waitingForFormatVideoFlag = true
   let trimmedVideoUrl = ''
 
-  console.log(store.videoData?.name)
-
   await fetch(
     `http://localhost:8080/trim?videoName=${store.videoData?.name}&videoCurrentTime=${formatTime(Math.floor(store.currentTime))}&videoDuration=${formatTime(Math.floor(store.videoDuration))}`
   )
     .then((response) => response.json())
     .then((data) => {
       const { result, error } = data
-      console.log(result)
       trimmedVideoUrl = result
     })
 

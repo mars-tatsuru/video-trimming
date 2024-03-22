@@ -1,6 +1,6 @@
 import fastify from 'fastify'
 import ffmpeg from 'fluent-ffmpeg'
-import { promises as fsPromises, createWriteStream } from 'fs'
+import { promises as fsPromises, createWriteStream, WriteStream } from 'fs'
 import { trim } from 'lodash-es'
 import { basename, join } from 'path'
 import { cdate } from 'cdate'
@@ -12,8 +12,10 @@ import {
   ListBucketsCommand,
   GetObjectCommand
 } from '@aws-sdk/client-s3'
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { Upload } from '@aws-sdk/lib-storage'
 import { fromIni } from '@aws-sdk/credential-providers'
+import { Readable } from 'stream'
 
 const server = fastify()
 
@@ -94,7 +96,7 @@ function onError(err: Error) {
  *******************************************************/
 async function trimVideo(inputPath: string, startTime: string, endTime: string) {
   return new Promise<string>((resolve, reject) => {
-    const inputName = basename(inputPath) //sample.mp4
+    const inputName = basename(inputPath) //~~~~~.mp4
 
     ffmpeg(inputPath)
       .inputOptions([`-ss ${startTime}`, `-t ${endTime}`])
@@ -118,14 +120,38 @@ export const mainFunction = async (
   videoDuration: string
 ) => {
   try {
-    // get AWS S3 bucket === videoName
+    // if bucket === videoName, get AWS S3
     const command = new GetObjectCommand({
       Bucket: `${env.BUCKETNAME}`,
       Key: `${env.FILEPATH}/${videoName}`
     })
 
-    const response = await client.send(command)
-    const stream = response.Body
+    // write video to input folder to trim by ffmpeg
+    const { Body } = await client.send(command)
+    const writer: WriteStream = createWriteStream(join(FOLDERS.INPUT, videoName))
+    if (Body instanceof Readable) {
+      await new Promise((resolve, reject) => {
+        Body.pipe(writer)
+        Body.on('end', resolve)
+        Body.on('error', reject)
+      })
+    }
+
+    // // 署名を60分間有効なURLを取得
+    // FIXME: this is not working in this case.
+    // const getPresignedUrl = async (
+    //   bucket: string,
+    //   key: string,
+    //   expiresIn: number
+    // ): Promise<string> => {
+    //   const objectParams = {
+    //     Bucket: bucket,
+    //     Key: key
+    //   }
+    //   const url = await getSignedUrl(client, new GetObjectCommand(objectParams), { expiresIn })
+    //   return url
+    // }
+    // const dataUrl = await getPresignedUrl(env.BUCKETNAME, `${env.FILEPATH}/${videoName}`, 60 * 60)
 
     const inputFiles = [videoName]
     let trimmedVideoPath: string | undefined = undefined
@@ -135,7 +161,7 @@ export const mainFunction = async (
     }
 
     for (const i of inputFiles) {
-      const iPath = join(FOLDERS.INPUT, i) // input/sample.mp4
+      const iPath = join(FOLDERS.INPUT, videoName) // input/~~~~.mp4
       const stat = await fsPromises.stat(iPath) // return stats object
 
       if (!stat.isDirectory()) {
@@ -154,6 +180,7 @@ export const mainFunction = async (
  * POST AWS S3
  * ref: https://qiita.com/taisuke101700/items/d7efaca27b33adf29833
  * ref: https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/example_s3_PutObject_section.html
+ * ref: https://fukatsu.tech/ffmpeg-lambda-nodejs
  *******************************************************************/
 
 // post data to s3 bucket(test-koike/video)

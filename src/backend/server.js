@@ -20,8 +20,8 @@ server.register(cors_1.default, {
 server.register(multipart_1.default, {
     attachFieldsToBody: 'keyValues',
     limits: {
-        fileSize: 52428800, // ファイルサイズの制限 (50MB)
-        fieldSize: 52428800 // フィールドサイズの制限 (50MB)
+        fileSize: 2147483648, // ファイルサイズの制限 (50MB)
+        fieldSize: 2147483648 // フィールドサイズの制限 (50MB)
     }
 });
 /*******************************************************

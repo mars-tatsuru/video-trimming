@@ -10,6 +10,7 @@ const fs_1 = require("fs");
 const path_1 = require("path");
 const ts_dotenv_1 = require("ts-dotenv");
 const client_s3_1 = require("@aws-sdk/client-s3");
+const stream_1 = require("stream");
 const server = (0, fastify_1.default)();
 const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
 const ffprobePath = require('@ffprobe-installer/ffprobe').path;
@@ -74,7 +75,7 @@ function onError(err) {
  *******************************************************/
 async function trimVideo(inputPath, startTime, endTime) {
     return new Promise((resolve, reject) => {
-        const inputName = (0, path_1.basename)(inputPath); //sample.mp4
+        const inputName = (0, path_1.basename)(inputPath); //~~~~~.mp4
         (0, fluent_ffmpeg_1.default)(inputPath)
             .inputOptions([`-ss ${startTime}`, `-t ${endTime}`])
             .outputOptions(['-c copy'])
@@ -92,20 +93,43 @@ async function trimVideo(inputPath, startTime, endTime) {
 }
 const mainFunction = async (videoName, videoCurrentTime, videoDuration) => {
     try {
-        // get AWS S3 bucket === videoName
+        // if bucket === videoName, get AWS S3
         const command = new client_s3_1.GetObjectCommand({
             Bucket: `${env.BUCKETNAME}`,
             Key: `${env.FILEPATH}/${videoName}`
         });
-        const response = await client.send(command);
-        const stream = response.Body;
+        // write video to input folder to trim by ffmpeg
+        const { Body } = await client.send(command);
+        const writer = (0, fs_1.createWriteStream)((0, path_1.join)(FOLDERS.INPUT, videoName));
+        if (Body instanceof stream_1.Readable) {
+            await new Promise((resolve, reject) => {
+                Body.pipe(writer);
+                Body.on('end', resolve);
+                Body.on('error', reject);
+            });
+        }
+        // // 署名を60分間有効なURLを取得
+        // FIXME: this is not working in this case.
+        // const getPresignedUrl = async (
+        //   bucket: string,
+        //   key: string,
+        //   expiresIn: number
+        // ): Promise<string> => {
+        //   const objectParams = {
+        //     Bucket: bucket,
+        //     Key: key
+        //   }
+        //   const url = await getSignedUrl(client, new GetObjectCommand(objectParams), { expiresIn })
+        //   return url
+        // }
+        // const dataUrl = await getPresignedUrl(env.BUCKETNAME, `${env.FILEPATH}/${videoName}`, 60 * 60)
         const inputFiles = [videoName];
         let trimmedVideoPath = undefined;
         if (!isArray(inputFiles) || inputFiles.length === 0) {
             throw new Error(EORRORS.INPUT);
         }
         for (const i of inputFiles) {
-            const iPath = (0, path_1.join)(FOLDERS.INPUT, i); // input/sample.mp4
+            const iPath = (0, path_1.join)(FOLDERS.INPUT, videoName); // input/~~~~.mp4
             const stat = await fs_1.promises.stat(iPath); // return stats object
             if (!stat.isDirectory()) {
                 trimmedVideoPath = await trimVideo(iPath, videoCurrentTime, videoDuration);
@@ -123,6 +147,7 @@ exports.mainFunction = mainFunction;
  * POST AWS S3
  * ref: https://qiita.com/taisuke101700/items/d7efaca27b33adf29833
  * ref: https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/example_s3_PutObject_section.html
+ * ref: https://fukatsu.tech/ffmpeg-lambda-nodejs
  *******************************************************************/
 // post data to s3 bucket(test-koike/video)
 const postDataToBucket = async (VideoName, fileData) => {
