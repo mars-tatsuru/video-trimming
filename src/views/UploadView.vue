@@ -65,25 +65,26 @@ const onSelected = async (e: Event) => {
   }
 
   store.videoData = fileObj
-  console.log(store.videoData)
 
-  let formData = new FormData()
-  formData.append('file', store.videoData as Blob, store.videoData?.name)
-  console.log(formData)
+  // store video fileをサーバーに送信できるようにする
+  // ファイルデータへ
+  const fileData = new FormData()
+  fileData.append('file', fileObj!)
 
-  // await fetch(`http://localhost:8080/video?VideoName=${store.videoData?.name}`, {
-  //   method: 'POST',
-  //   body: formData
-  // })
-  //   .then((response) => response.json())
-  //   .then((data) => {
-  //     const { result, error } = data
+  await fetch(`http://localhost:8080/video?VideoName=${store.videoData?.name}`, {
+    method: 'POST',
+    // 送信するvideoデータを指定
+    body: fileData
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      const { result, error } = data
 
-  //     if (error) {
-  //       console.error(error)
-  //       return
-  //     }
-  //   })
+      if (error) {
+        console.error(error)
+        return
+      }
+    })
 
   router.push('/edit')
 }

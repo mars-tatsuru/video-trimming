@@ -209,13 +209,16 @@ export const mainFunction = async (
  * POST AWS S3
  * ref: https://qiita.com/taisuke101700/items/d7efaca27b33adf29833
  *******************************************************************/
-const env = load({
-  AWS_ACCESS_KEY_ID: String,
-  AWS_SECRET_ACCESS_KEY: String,
-  REGION: String,
-  BUCKETNAME: String,
-  FILEPATH: String
-})
+const env = load(
+  {
+    AWS_ACCESS_KEY_ID: String,
+    AWS_SECRET_ACCESS_KEY: String,
+    REGION: String,
+    BUCKETNAME: String,
+    FILEPATH: String
+  },
+  { path: '.env.local' }
+)
 
 const client = new S3Client({
   region: env.REGION,
@@ -239,19 +242,17 @@ const client = new S3Client({
 
 // https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/example_s3_PutObject_section.html
 // post data to s3 bucket(test-koike/video)
-export const postDataToBucket = async (VideoName: string) => {
+export const postDataToBucket = async (VideoName: string, fileData: Buffer) => {
   const command = new PutObjectCommand({
     Bucket: `${env.BUCKETNAME}`,
     Key: `${env.FILEPATH}/${VideoName}`,
-    Body: 'Hello World!',
-    ContentType: 'text/plain'
+    Body: fileData,
+    ContentType: 'video/mp4'
   })
 
   try {
     const response = await client.send(command)
-    console.log(response)
-
-    return 'Success'
+    return response
   } catch (err) {
     onError(err as Error)
     console.error(err)

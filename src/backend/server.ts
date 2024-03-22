@@ -14,8 +14,13 @@ const server = fastify()
 server.register(cors, {
   origin: '*'
 })
-
-server.register(multiPart)
+server.register(multiPart, {
+  attachFieldsToBody: 'keyValues',
+  limits: {
+    fileSize: 52428800, // ファイルサイズの制限 (50MB)
+    fieldSize: 52428800 // フィールドサイズの制限 (50MB)
+  }
+})
 
 /*******************************************************
  * CREATE SERVER
@@ -43,13 +48,9 @@ server.get('/trim', async (request: any, reply: any) => {
 server.post('/video', async (request: any, reply: any) => {
   try {
     const { VideoName } = request.query
-    const formData = await request.parts() // マルチパートフォームデータを取得
-    const fileData = formData['file'] // ファイルデータを取得
+    const fileData = await request.body.file
 
-    console.log('VideoName', VideoName)
-    console.log('fileData', fileData)
-
-    const result = postDataToBucket(VideoName)
+    const result = postDataToBucket(VideoName, fileData)
     reply.send({ result })
   } catch (error: any) {
     reply.status(500).send({ error: error.message })

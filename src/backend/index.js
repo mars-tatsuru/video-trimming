@@ -180,7 +180,7 @@ const env = (0, ts_dotenv_1.load)({
     REGION: String,
     BUCKETNAME: String,
     FILEPATH: String
-});
+}, { path: '.env.local' });
 const client = new client_s3_1.S3Client({
     region: env.REGION,
     credentials: {
@@ -200,17 +200,16 @@ const client = new client_s3_1.S3Client({
 // }
 // https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/example_s3_PutObject_section.html
 // post data to s3 bucket(test-koike/video)
-const postDataToBucket = async (VideoName) => {
+const postDataToBucket = async (VideoName, fileData) => {
     const command = new client_s3_1.PutObjectCommand({
         Bucket: `${env.BUCKETNAME}`,
         Key: `${env.FILEPATH}/${VideoName}`,
-        Body: 'Hello World!',
-        ContentType: 'text/plain'
+        Body: fileData,
+        ContentType: 'video/mp4'
     });
     try {
         const response = await client.send(command);
-        console.log(response);
-        return 'Success';
+        return response;
     }
     catch (err) {
         onError(err);
