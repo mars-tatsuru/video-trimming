@@ -86,41 +86,16 @@ function formatTime(seconds: number) {
 /****************************************
  * handle exportFile
  ****************************************/
-// const handleVideoExport = () => {
-//   store.waitingForFormatVideoFlag = true
-
-//   trimVideo(
-//     '/src/assets/sample.mp4',
-//     formatTime(Math.floor(store.currentTime)),
-//     `${store.videoDuration}`
-//   ).then((trimmedVideoUrl) => {
-//     const downloadLink = document.createElement('a')
-//     downloadLink.download = 'video.mp4'
-
-//     downloadLink.href = trimmedVideoUrl
-
-//     downloadLink.setAttribute('hidden', 'true')
-//     document.body.appendChild(downloadLink)
-//     downloadLink.click()
-//     downloadLink.remove()
-
-//     store.waitingForFormatVideoFlag = false
-//   })
-// }
-
 const handleVideoFromApi = async () => {
   store.waitingForFormatVideoFlag = true
   let trimmedVideoUrl = ''
 
-  console.log(store.videoData?.name)
-
   await fetch(
-    `http://localhost:8080/trim?videoName=${store.videoData?.name}&videoCurrentTime=${formatTime(Math.floor(store.currentTime))}&videoDuration=${store.videoDuration}`
+    `http://localhost:8080/trim?videoName=${store.videoData?.name}&videoCurrentTime=${formatTime(Math.floor(store.currentTime))}&videoDuration=${formatTime(Math.floor(store.videoDuration))}`
   )
     .then((response) => response.json())
     .then((data) => {
       const { result, error } = data
-      console.log(result)
       trimmedVideoUrl = result
     })
 

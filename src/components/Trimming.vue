@@ -37,6 +37,12 @@ const canvasWidth = computed(() => {
   return videoPlayerElement.clientWidth
 })
 
+const canvasHeight = computed(() => {
+  // get canvas height
+  const videoPlayerElement = sliderCanvas.value as HTMLCanvasElement
+  return videoPlayerElement.clientHeight
+})
+
 /****************************************
  * emit
  ****************************************/
@@ -103,7 +109,6 @@ const handleMouseOver = () => {
  * DOM setting
  ****************************************/
 // TODO: create thumbnails
-const thumbnails = ref<string[]>([])
 
 /****************************************
  * onMounted

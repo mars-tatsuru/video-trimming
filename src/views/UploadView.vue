@@ -41,7 +41,7 @@ const isWrongFileType = (fileType: string) => {
 /****************************************
  * onHandler
  ****************************************/
-const onSelected = (e: Event) => {
+const onSelected = async (e: Event) => {
   const fileObj = (e.target as HTMLInputElement)?.files?.[0]
 
   if (fileObj) {
@@ -65,6 +65,28 @@ const onSelected = (e: Event) => {
   }
 
   store.videoData = fileObj
+
+  // store video fileをサーバーに送信できるようにする
+  // ファイルデータへ
+  const fileData = new FormData()
+  fileData.append('file', fileObj!)
+
+  // TODO:大きなデータを上げると遅いので、分割アップロードを実装する
+  // https://zenn.dev/mryhryki/articles/2022-12-01-s3-multipart-upload
+  await fetch(`http://localhost:8080/video?VideoName=${store.videoData?.name}`, {
+    method: 'POST',
+    // 送信するvideoデータを指定
+    body: fileData
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      const { result, error } = data
+
+      if (error) {
+        console.error(error)
+        return
+      }
+    })
 
   router.push('/edit')
 }
