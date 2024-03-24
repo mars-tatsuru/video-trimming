@@ -44,9 +44,13 @@ const canvasHeight = computed(() => {
 let isDragging = ref<boolean>(false)
 let isDraggingLeft = ref<boolean>(false)
 let isDraggingRight = ref<boolean>(false)
+
 const trimmingSliderWrapper = ref<HTMLDivElement | null>(null)
 const trimmingSlider = ref<HTMLDivElement | null>(null)
+const leftArrowWrapper = ref<HTMLDivElement | null>(null)
+const rightArrowWrapper = ref<HTMLDivElement | null>(null)
 const progressBar = ref<HTMLDivElement | null>(null)
+
 const cursorType = ref<string>('pointer')
 const trimmingSliderBackgroundColor = ref<string>('#cccccc')
 const progressBarPosition = ref<number>(22)
@@ -74,10 +78,15 @@ const progressBarPositionCalc = (e: MouseEvent) => {
 
 // for trimming slider width
 const trimmingSliderWidthCalcForRightTrim = (e: MouseEvent) => {
-  if (e.clientX <= trimmingSliderWrapper.value!.offsetWidth + 110) {
-    trimmingSliderWidth.value = e.clientX - 110
+  if (
+    e.clientX <= trimmingSliderWrapper.value!.offsetWidth + 105 &&
+    trimmingSlider.value!.style.left === '0px'
+  ) {
+    trimmingSliderWidth.value = e.clientX - 105
+  } else if (e.clientX <= trimmingSliderWrapper.value!.offsetWidth + 105) {
+    trimmingSliderWidth.value = e.clientX - trimmingSlider.value!.offsetLeft - 105
   } else {
-    trimmingSliderWidth.value = trimmingSliderWrapper.value!.offsetWidth
+    trimmingSliderWidth.value = trimmingSliderWidth.value
   }
 }
 
@@ -86,10 +95,9 @@ const trimmingSliderWidthCalcForLeftTrim = (e: MouseEvent) => {
   if (e.clientX > 120) {
     trimmingSliderWidth.value =
       trimmingSliderWidth.value + (trimmingSlider.value!.offsetLeft - e.clientX + 120)
-    console.log(trimmingSliderWidth.value)
     trimmingSlider.value!.style.left = `${e.clientX - 120}px`
-  } else if (0 <= e.clientX) {
-    trimmingSliderWidth.value = trimmingSliderWrapper.value!.offsetWidth
+  } else if (0 < e.clientX) {
+    trimmingSliderWidth.value = trimmingSliderWidth.value
   }
 }
 
@@ -113,7 +121,7 @@ const handleMouseUpForTrimmingSliderRight = (e: MouseEvent) => {
 }
 
 const handleMouseLeaveForTrimmingSliderRight = (e: MouseEvent) => {
-  // cursorType.value = 'pointer'
+  // cursorType.value = 'grab'
 }
 
 // for left trim slider
@@ -136,7 +144,7 @@ const handleMouseUpForTrimmingSliderLeft = (e: MouseEvent) => {
 }
 
 const handleMouseLeaveForTrimmingSliderLeft = (e: MouseEvent) => {
-  // cursorType.value = 'pointer'
+  // cursorType.value = 'grab'
 }
 
 /****************************************
@@ -181,9 +189,11 @@ watch(
         width: `${trimmingSliderWidth}px`,
         cursor: cursorType
       }"
+      :class="{ trimActive: isDraggingLeft || isDraggingRight }"
     >
       <div
         class="leftArrowWrapper"
+        ref="leftArrowWrapper"
         :style="{ backgroundColor: trimmingSliderBackgroundColor }"
         @mouseover="handleMouseHoverForTrimmingSliderLeft"
         @mousedown="handleMouseDownForTrimmingSliderLeft"
@@ -198,7 +208,10 @@ watch(
       </div>
       <div
         class="rightArrowWrapper"
-        :style="{ backgroundColor: trimmingSliderBackgroundColor }"
+        ref="rightArrowWrapper"
+        :style="{
+          backgroundColor: trimmingSliderBackgroundColor
+        }"
         @mouseover="handleMouseHoverForTrimmingSliderRight"
         @mousedown="handleMouseDownForTrimmingSliderRight"
         @mouseup="handleMouseUpForTrimmingSliderRight"
@@ -250,9 +263,16 @@ watch(
   z-index: 1;
   width: 100%;
   height: 100%;
-  padding: 10px 22px;
+  padding: 0px 22px;
   border-radius: 10px;
   background-color: transparent;
+  border-top: 10px solid #cccccc;
+  border-bottom: 10px solid #cccccc;
+
+  &.trimActive {
+    border-top: 10px solid #ffc800;
+    border-bottom: 10px solid #ffc800;
+  }
 
   .rightArrowWrapper {
     position: absolute;
@@ -261,7 +281,7 @@ watch(
     width: 22px;
     height: 100%;
     background-color: #cccccc;
-    border-radius: 0 10px 10px 0;
+    // border-radius: 0 10px 10px 0;
     .rightArrow {
       position: absolute;
       top: 50%;
@@ -287,7 +307,7 @@ watch(
     width: 22px;
     height: 100%;
     background-color: #c3c3c3;
-    border-radius: 10px 0 0 10px;
+    // border-radius: 10px 0 0 10px;
     .leftArrow {
       position: absolute;
       top: 50%;
