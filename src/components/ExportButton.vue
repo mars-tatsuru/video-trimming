@@ -112,13 +112,38 @@ const handleVideoFromApi = async () => {
 
   store.waitingForFormatVideoFlag = false
 }
+
+/****************************************
+ * handle exportFile by frontend for test
+ ****************************************/
+const handleVideoFromFrontend = async () => {
+  store.waitingForFormatVideoFlag = true
+  trimVideo(
+    'src/assets/sample.mp4',
+    formatTime(Math.floor(store.currentTime)),
+    formatTime(Math.floor(store.videoDuration))
+  ).then((url) => {
+    const downloadLink = document.createElement('a')
+    downloadLink.download = 'video.mp4'
+
+    downloadLink.href = url
+    console.log(downloadLink.href)
+
+    downloadLink.setAttribute('hidden', 'true')
+    document.body.appendChild(downloadLink)
+    downloadLink.click()
+    downloadLink.remove()
+
+    store.waitingForFormatVideoFlag = false
+  })
+}
 </script>
 
 <template>
   <div class="exportButton">
     <button
       :class="{ waitingDownload: store.waitingForFormatVideoFlag }"
-      @click="handleVideoFromApi"
+      @click="handleVideoFromFrontend"
     >
       <span class="download" v-if="!store.waitingForFormatVideoFlag">
         <svg
