@@ -56,6 +56,7 @@ const trimmingSliderBackgroundColor = ref<string>('#cccccc')
 const progressBarPosition = ref<number>(22)
 const trimmingSliderWidth = ref<number>(0)
 
+// for all
 const handleMouseMove = (e: MouseEvent) => {
   if (isDraggingRight.value) {
     trimmingSliderWidthCalcForRightTrim(e)
@@ -63,11 +64,20 @@ const handleMouseMove = (e: MouseEvent) => {
   if (isDraggingLeft.value) {
     trimmingSliderWidthCalcForLeftTrim(e)
   }
+  if (isDragging.value) {
+    if (progressBarPositionCalc(e) < 0) {
+      progressBarPosition.value = 0
+      return
+    }
+    progressBarPosition.value = progressBarPositionCalc(e)
+  }
 }
 
 const handleMouseLeave = (e: MouseEvent) => {
+  isDragging.value = false
   isDraggingRight.value = false
   isDraggingLeft.value = false
+
   trimmingSliderBackgroundColor.value = '#cccccc'
   cursorType.value = 'pointer'
 
@@ -79,8 +89,35 @@ const handleMouseLeave = (e: MouseEvent) => {
     store.videoDuration * (trimmingSliderWidth.value / trimmingSliderWrapper.value!.offsetWidth)
 }
 
+// for progress bar
 const progressBarPositionCalc = (e: MouseEvent) => {
-  progressBarPosition.value = e.clientX - progressBar.value!.offsetWidth / 2 - 112
+  return (progressBarPosition.value = e.clientX - progressBar.value!.offsetWidth / 2 - 108)
+}
+
+const handleMouseDbClickForProgressBar = (e: MouseEvent) => {
+  if (!store.playFlag) {
+    progressBarPosition.value = progressBarPositionCalc(e)
+    store.currentTime =
+      store.videoDuration * (progressBarPosition.value / trimmingSliderWrapper.value!.clientWidth)
+  }
+}
+
+const handleMouseDownForProgressBar = (e: MouseEvent) => {
+  isDragging.value = true
+  cursorType.value = 'grabbing'
+  progressBarPosition.value = progressBarPositionCalc(e)
+}
+
+const handleMouseUpForProgressBar = (e: MouseEvent) => {
+  isDragging.value = false
+  cursorType.value = 'grab'
+
+  store.currentTime =
+    store.videoDuration * (progressBarPosition.value / trimmingSliderWrapper.value!.clientWidth)
+}
+
+const handleMouseOverForProgressBar = () => {
+  // cursorType.value = 'grab'
 }
 
 // for trimming slider width
@@ -191,6 +228,7 @@ watch(
     ref="trimmingSliderWrapper"
     @mousemove="handleMouseMove"
     @mouseleave="handleMouseLeave"
+    @dblclick="handleMouseDbClickForProgressBar"
   >
     <!-- ↓trim slider↓ -->
     <div
@@ -238,11 +276,16 @@ watch(
     <canvas ref="sliderCanvas" style="user-select: none" />
     <!-- ↑trim slider↑ -->
 
+    <!-- ↓progress bar↓ -->
     <!-- <div
       class="progressBar"
-      :style="{ left: `${progressBarPosition}px`, cursor: cursorType }"
       ref="progressBar"
+      :style="{ left: `${progressBarPosition}px`, cursor: cursorType }"
+      @mousedown="handleMouseDownForProgressBar"
+      @mouseup="handleMouseUpForProgressBar"
+      @mouseover="handleMouseOverForProgressBar"
     ></div> -->
+    <!-- ↑progress bar↑ -->
   </div>
 </template>
 
@@ -254,6 +297,7 @@ watch(
   border-radius: 10px;
   background: #cccccc;
   padding: 10px 0;
+  cursor: pointer;
 
   canvas {
     position: absolute;
@@ -340,6 +384,7 @@ watch(
 
 .progressBar {
   position: absolute;
+  z-index: 2;
   bottom: 0;
   background: #fff;
   width: 5px;
