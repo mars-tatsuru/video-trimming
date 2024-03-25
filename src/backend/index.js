@@ -3,10 +3,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.postDataToBucket = exports.mainFunction = void 0;
+exports.transformMp4ToMp3 = exports.postDataToBucket = exports.mainFunction = void 0;
 const fastify_1 = __importDefault(require("fastify"));
 const fluent_ffmpeg_1 = __importDefault(require("fluent-ffmpeg"));
 const fs_1 = require("fs");
+const lodash_es_1 = require("lodash-es");
 const path_1 = require("path");
 const ts_dotenv_1 = require("ts-dotenv");
 const client_s3_1 = require("@aws-sdk/client-s3");
@@ -167,3 +168,61 @@ const postDataToBucket = async (VideoName, fileData) => {
     }
 };
 exports.postDataToBucket = postDataToBucket;
+/*******************************************************
+ * TRANSFORM MP4 TO MP3
+ *******************************************************/
+const changeExtension = async (inputPath) => {
+    const inputName = (0, path_1.basename)(inputPath); //~~~~~.mp4
+    const outputName = (0, lodash_es_1.trim)(inputName, '.mp4') + '.mp3';
+    const outputPath = (0, path_1.join)(FOLDERS.OUTPUT, outputName);
+    return new Promise((resolve, reject) => {
+        (0, fluent_ffmpeg_1.default)(inputPath)
+            .outputOptions(['-vn', '-acodec copy'])
+            .on('error', reject)
+            .on('start', () => {
+            // console.log(`Start transforming for ${inputName}`)
+        })
+            .on('end', () => {
+            // console.log(`${inputName} transformed`)
+            resolve(outputPath);
+        })
+            .save(outputPath);
+    });
+};
+const transformMp4ToMp3 = async (videoName) => {
+    try {
+        // if bucket === videoName, get AWS S3
+        const command = new client_s3_1.GetObjectCommand({
+            Bucket: `${env.BUCKETNAME}`,
+            Key: `${env.FILEPATH}/${'sample.mp4'}`
+        });
+        // write video to input folder to trim by ffmpeg
+        const { Body } = await client.send(command);
+        const writer = (0, fs_1.createWriteStream)((0, path_1.join)(FOLDERS.INPUT, 'sample.mp4'));
+        if (Body instanceof stream_1.Readable) {
+            await new Promise((resolve, reject) => {
+                Body.pipe(writer);
+                Body.on('end', resolve);
+                Body.on('error', reject);
+            });
+        }
+        const inputFiles = ['sample.mp4'];
+        let trimmedVideoPath = undefined;
+        if (!isArray(inputFiles) || inputFiles.length === 0) {
+            throw new Error(EORRORS.INPUT);
+        }
+        for (const i of inputFiles) {
+            const iPath = (0, path_1.join)(FOLDERS.INPUT, 'sample.mp4'); // input/~~~~.mp4
+            const stat = await fs_1.promises.stat(iPath); // return stats object
+            if (!stat.isDirectory()) {
+                trimmedVideoPath = await changeExtension(iPath);
+            }
+        }
+        return trimmedVideoPath;
+    }
+    catch (err) {
+        onError(err);
+        return 'Error';
+    }
+};
+exports.transformMp4ToMp3 = transformMp4ToMp3;

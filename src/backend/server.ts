@@ -58,6 +58,16 @@ server.post('/video', async (request: any, reply: any) => {
   return 'video\n'
 })
 
+// server.get('/transform', async (request: any, reply: any) => {
+//   try {
+//     const { inputPath } = request.query
+//     const result = await transformMp4ToMp3()
+//     reply.send({ result })
+//   } catch (error: any) {
+//     reply.status(500).send({ error: error.message })
+//   }
+// })
+
 server.listen({ port: 8080 }, (err, address) => {
   if (err) {
     console.error(err)
