@@ -83,7 +83,8 @@ const handleMouseLeave = (e: MouseEvent) => {
 
   // when mouse leave, set the trim start and end time
   store.trimStart =
-    store.videoDuration * (trimmingSlider.value!.offsetLeft / trimmingSliderWidth.value)
+    store.videoDuration *
+    (trimmingSlider.value!.offsetLeft / trimmingSliderWrapper.value!.offsetWidth)
 
   store.trimEnd =
     store.videoDuration * (trimmingSliderWidth.value / trimmingSliderWrapper.value!.offsetWidth)
@@ -188,7 +189,8 @@ const handleMouseUpForTrimmingSliderLeft = (e: MouseEvent) => {
   trimmingSliderBackgroundColor.value = '#cccccc'
   cursorType.value = 'grab'
   store.trimStart =
-    store.videoDuration * (trimmingSlider.value!.offsetLeft / trimmingSliderWidth.value)
+    store.videoDuration *
+    (trimmingSlider.value!.offsetLeft / trimmingSliderWrapper.value!.offsetWidth)
 }
 
 const handleMouseLeaveForTrimmingSliderLeft = (e: MouseEvent) => {
