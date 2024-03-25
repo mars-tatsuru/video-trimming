@@ -91,7 +91,7 @@ const handleVideoFromApi = async () => {
   let trimmedVideoUrl = ''
 
   await fetch(
-    `http://localhost:8080/trim?videoName=${store.videoData?.name}&videoCurrentTime=${formatTime(Math.floor(store.currentTime))}&videoDuration=${formatTime(Math.floor(store.videoDuration))}`
+    `http://localhost:8080/trim?videoName=${store.videoData?.name}&videoCurrentTime=${formatTime(Math.floor(store.trimStart))}&videoDuration=${formatTime(Math.floor(store.trimEnd))}`
   )
     .then((response) => response.json())
     .then((data) => {
@@ -116,34 +116,34 @@ const handleVideoFromApi = async () => {
 /****************************************
  * handle exportFile by frontend for test
  ****************************************/
-const handleVideoFromFrontend = async () => {
-  store.waitingForFormatVideoFlag = true
-  trimVideo(
-    'src/assets/sample.mp4',
-    formatTime(Math.floor(store.currentTime)),
-    formatTime(Math.floor(store.videoDuration))
-  ).then((url) => {
-    const downloadLink = document.createElement('a')
-    downloadLink.download = 'video.mp4'
+// const handleVideoFromFrontend = async () => {
+//   store.waitingForFormatVideoFlag = true
+//   trimVideo(
+//     'src/assets/sample.mp4',
+//     formatTime(Math.floor(store.currentTime)),
+//     formatTime(Math.floor(store.videoDuration))
+//   ).then((url) => {
+//     const downloadLink = document.createElement('a')
+//     downloadLink.download = 'video.mp4'
 
-    downloadLink.href = url
-    console.log(downloadLink.href)
+//     downloadLink.href = url
+//     console.log(downloadLink.href)
 
-    downloadLink.setAttribute('hidden', 'true')
-    document.body.appendChild(downloadLink)
-    downloadLink.click()
-    downloadLink.remove()
+//     downloadLink.setAttribute('hidden', 'true')
+//     document.body.appendChild(downloadLink)
+//     downloadLink.click()
+//     downloadLink.remove()
 
-    store.waitingForFormatVideoFlag = false
-  })
-}
+//     store.waitingForFormatVideoFlag = false
+//   })
+// }
 </script>
 
 <template>
   <div class="exportButton">
     <button
       :class="{ waitingDownload: store.waitingForFormatVideoFlag }"
-      @click="handleVideoFromFrontend"
+      @click="handleVideoFromApi"
     >
       <span class="download" v-if="!store.waitingForFormatVideoFlag">
         <svg

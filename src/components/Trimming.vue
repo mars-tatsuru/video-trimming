@@ -70,6 +70,13 @@ const handleMouseLeave = (e: MouseEvent) => {
   isDraggingLeft.value = false
   trimmingSliderBackgroundColor.value = '#cccccc'
   cursorType.value = 'pointer'
+
+  // when mouse leave, set the trim start and end time
+  store.trimStart =
+    store.videoDuration * (trimmingSlider.value!.offsetLeft / trimmingSliderWidth.value)
+
+  store.trimEnd =
+    store.videoDuration * (trimmingSliderWidth.value / trimmingSliderWrapper.value!.offsetWidth)
 }
 
 const progressBarPositionCalc = (e: MouseEvent) => {
