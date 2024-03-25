@@ -91,7 +91,7 @@ const handleVideoFromApi = async () => {
   let trimmedVideoUrl = ''
 
   await fetch(
-    `http://localhost:8080/trim?videoName=${store.videoData?.name}&videoCurrentTime=${formatTime(Math.floor(store.trimStart))}&videoDuration=${formatTime(Math.floor(store.trimEnd))}`
+    `http://localhost:8080/trim?videoName=${store.videoData?.name}&videoTrimStartTime=${formatTime(Math.floor(store.trimStart))}&videoTrimEndTime=${formatTime(Math.floor(store.trimEnd))}`
   )
     .then((response) => response.json())
     .then((data) => {

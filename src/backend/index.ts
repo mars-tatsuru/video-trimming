@@ -116,8 +116,8 @@ async function trimVideo(inputPath: string, startTime: string, endTime: string) 
 
 export const mainFunction = async (
   videoName: string,
-  videoCurrentTime: string,
-  videoDuration: string
+  videoTrimStartTime: string,
+  videoTrimEndTime: string
 ) => {
   try {
     // if bucket === videoName, get AWS S3
@@ -165,7 +165,7 @@ export const mainFunction = async (
       const stat = await fsPromises.stat(iPath) // return stats object
 
       if (!stat.isDirectory()) {
-        trimmedVideoPath = await trimVideo(iPath, videoCurrentTime, videoDuration)
+        trimmedVideoPath = await trimVideo(iPath, videoTrimStartTime, videoTrimEndTime)
       }
     }
 

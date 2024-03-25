@@ -91,7 +91,7 @@ async function trimVideo(inputPath, startTime, endTime) {
             .save((0, path_1.join)(FOLDERS.OUTPUT, inputName));
     });
 }
-const mainFunction = async (videoName, videoCurrentTime, videoDuration) => {
+const mainFunction = async (videoName, videoTrimStartTime, videoTrimEndTime) => {
     try {
         // if bucket === videoName, get AWS S3
         const command = new client_s3_1.GetObjectCommand({
@@ -132,7 +132,7 @@ const mainFunction = async (videoName, videoCurrentTime, videoDuration) => {
             const iPath = (0, path_1.join)(FOLDERS.INPUT, videoName); // input/~~~~.mp4
             const stat = await fs_1.promises.stat(iPath); // return stats object
             if (!stat.isDirectory()) {
-                trimmedVideoPath = await trimVideo(iPath, videoCurrentTime, videoDuration);
+                trimmedVideoPath = await trimVideo(iPath, videoTrimStartTime, videoTrimEndTime);
             }
         }
         return trimmedVideoPath;

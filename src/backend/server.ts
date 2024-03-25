@@ -35,8 +35,8 @@ server.get('/ping', async (request, reply) => {
 
 server.get('/trim', async (request: any, reply: any) => {
   try {
-    const { videoName, videoCurrentTime, videoDuration } = request.query
-    const result = await mainFunction(videoName, videoCurrentTime, videoDuration)
+    const { videoName, videoTrimStartTime, videoTrimEndTime } = request.query
+    const result = await mainFunction(videoName, videoTrimStartTime, videoTrimEndTime)
 
     reply.send({ result }) // return trimmedVideo path to frontend
   } catch (error: any) {
