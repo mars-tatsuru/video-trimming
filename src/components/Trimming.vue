@@ -118,6 +118,8 @@ const handleMouseUpForTrimmingSliderRight = (e: MouseEvent) => {
   isDraggingRight.value = false
   trimmingSliderBackgroundColor.value = '#cccccc'
   cursorType.value = 'grab'
+  store.trimEnd =
+    store.videoDuration * (trimmingSliderWidth.value / trimmingSliderWrapper.value!.offsetWidth)
 }
 
 const handleMouseLeaveForTrimmingSliderRight = (e: MouseEvent) => {
@@ -141,6 +143,8 @@ const handleMouseUpForTrimmingSliderLeft = (e: MouseEvent) => {
   isDraggingLeft.value = false
   trimmingSliderBackgroundColor.value = '#cccccc'
   cursorType.value = 'grab'
+  store.trimStart =
+    store.videoDuration * (trimmingSlider.value!.offsetLeft / trimmingSliderWidth.value)
 }
 
 const handleMouseLeaveForTrimmingSliderLeft = (e: MouseEvent) => {
