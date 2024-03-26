@@ -1,7 +1,7 @@
 // https://github.com/fluent-ffmpeg/node-fluent-ffmpeg
 import fastify from 'fastify'
 import ffmpeg from 'fluent-ffmpeg'
-import { promises as fsPromises, createWriteStream, WriteStream } from 'fs'
+import { promises as fsPromises, createWriteStream, WriteStream, createReadStream } from 'fs'
 import { basename, join } from 'path'
 import { load } from 'ts-dotenv'
 import { PutObjectCommand, S3Client, GetObjectCommand } from '@aws-sdk/client-s3'
@@ -9,6 +9,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { Upload } from '@aws-sdk/lib-storage'
 import { fromIni } from '@aws-sdk/credential-providers'
 import { Readable } from 'stream'
+import OpenAI from 'openai'
 
 const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path
 const ffprobePath = require('@ffprobe-installer/ffprobe').path
@@ -34,7 +35,8 @@ const env = load(
     AWS_SECRET_ACCESS_KEY: String,
     REGION: String,
     BUCKETNAME: String,
-    FILEPATH: String
+    FILEPATH: String,
+    OPENAI_KEY: String
   },
   { path: '.env.local' }
 )
@@ -179,6 +181,27 @@ export const postDataToBucket = async (VideoName: string, fileData: Buffer) => {
 /*******************************************************
  * TRANSFORM MP4 TO MP3
  *******************************************************/
+const openai = new OpenAI({
+  apiKey: env.OPENAI_KEY
+})
+
+const transcriptionWithWhisper = async (transformVideoPath: string | undefined) => {
+  // Whisperモデルを使用してテキスト変換リクエストを送信
+  let response
+  if (transformVideoPath === undefined) {
+    throw new Error(EORRORS.INPUT)
+  } else {
+    response = await openai.audio.transcriptions.create({
+      model: 'whisper-1',
+      file: createReadStream(transformVideoPath!),
+      language: 'ja'
+    })
+  }
+
+  // 変換されたテキストを出力
+  return response
+}
+
 const changeExtension = async (inputPath: string) => {
   const inputName = basename(inputPath) //~~~~~.mp4
   const outputName = basename(inputPath, '.mp4') + '.mp3' //~~~~~.mp3
@@ -232,7 +255,9 @@ export const transformMp4ToMp3 = async (videoName: string) => {
       }
     }
 
-    return transformVideoPath
+    const text = await transcriptionWithWhisper(transformVideoPath)
+
+    return { transformVideoPath, text }
   } catch (err) {
     onError(err as Error)
     return 'Error'

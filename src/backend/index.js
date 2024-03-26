@@ -10,6 +10,7 @@ const path_1 = require("path");
 const ts_dotenv_1 = require("ts-dotenv");
 const client_s3_1 = require("@aws-sdk/client-s3");
 const stream_1 = require("stream");
+const openai_1 = __importDefault(require("openai"));
 const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
 const ffprobePath = require('@ffprobe-installer/ffprobe').path;
 const FOLDERS = {
@@ -30,7 +31,8 @@ const env = (0, ts_dotenv_1.load)({
     AWS_SECRET_ACCESS_KEY: String,
     REGION: String,
     BUCKETNAME: String,
-    FILEPATH: String
+    FILEPATH: String,
+    OPENAI_KEY: String
 }, { path: '.env.local' });
 const client = new client_s3_1.S3Client({
     region: env.REGION,
@@ -153,6 +155,25 @@ exports.postDataToBucket = postDataToBucket;
 /*******************************************************
  * TRANSFORM MP4 TO MP3
  *******************************************************/
+const openai = new openai_1.default({
+    apiKey: env.OPENAI_KEY
+});
+const transcriptionWithWhisper = async (transformVideoPath) => {
+    // Whisperモデルを使用してテキスト変換リクエストを送信
+    let response;
+    if (transformVideoPath === undefined) {
+        throw new Error(EORRORS.INPUT);
+    }
+    else {
+        response = await openai.audio.transcriptions.create({
+            model: 'whisper-1',
+            file: (0, fs_1.createReadStream)(transformVideoPath),
+            language: 'ja'
+        });
+    }
+    // 変換されたテキストを出力
+    return response;
+};
 const changeExtension = async (inputPath) => {
     const inputName = (0, path_1.basename)(inputPath); //~~~~~.mp4
     const outputName = (0, path_1.basename)(inputPath, '.mp4') + '.mp3'; //~~~~~.mp3
@@ -198,7 +219,8 @@ const transformMp4ToMp3 = async (videoName) => {
                 transformVideoPath = await changeExtension(iPath);
             }
         }
-        return transformVideoPath;
+        const text = await transcriptionWithWhisper(transformVideoPath);
+        return { transformVideoPath, text };
     }
     catch (err) {
         onError(err);

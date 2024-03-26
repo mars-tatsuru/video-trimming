@@ -3,11 +3,14 @@ import { type Ref, ref, onMounted, onBeforeUnmount, watch, computed } from 'vue'
 import { mainStore } from '@/stores/main'
 import { FFmpeg } from '@ffmpeg/ffmpeg'
 import { fetchFile, toBlobURL } from '@ffmpeg/util'
+import { useRouter } from 'vue-router'
+import { cloneDeep, isEqual } from 'lodash-es'
 
 /****************************************
  * store
  ****************************************/
 const store = mainStore()
+const router = useRouter()
 
 /****************************************
  * data
@@ -54,7 +57,9 @@ const transformVideoFromApi = async () => {
     .then((response) => response.json())
     .then((data) => {
       const { result, error } = data
-      transformVideoUrl = result
+      transformVideoUrl = result.transformVideoPath
+      store.videoSummaryText = result.text.text
+      console.log(result.text.text)
     })
 
   const downloadLink = document.createElement('a')
@@ -69,6 +74,8 @@ const transformVideoFromApi = async () => {
   downloadLink.remove()
 
   store.waitingForFormatVideoFlag = false
+
+  router.push('/summary')
 }
 </script>
 
