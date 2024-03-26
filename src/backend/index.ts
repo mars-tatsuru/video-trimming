@@ -1,24 +1,14 @@
-import fastify from 'fastify'
 // https://github.com/fluent-ffmpeg/node-fluent-ffmpeg
+import fastify from 'fastify'
 import ffmpeg from 'fluent-ffmpeg'
 import { promises as fsPromises, createWriteStream, WriteStream } from 'fs'
-import { trim } from 'lodash-es'
 import { basename, join } from 'path'
-import { cdate } from 'cdate'
 import { load } from 'ts-dotenv'
-import {
-  PutObjectCommand,
-  S3Client,
-  ListObjectsV2Command,
-  ListBucketsCommand,
-  GetObjectCommand
-} from '@aws-sdk/client-s3'
+import { PutObjectCommand, S3Client, GetObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { Upload } from '@aws-sdk/lib-storage'
 import { fromIni } from '@aws-sdk/credential-providers'
 import { Readable } from 'stream'
-
-const server = fastify()
 
 const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path
 const ffprobePath = require('@ffprobe-installer/ffprobe').path
@@ -193,7 +183,6 @@ const changeExtension = async (inputPath: string) => {
   const inputName = basename(inputPath) //~~~~~.mp4
   const outputName = basename(inputPath, '.mp4') + '.mp3' //~~~~~.mp3
 
-  // TODO: ここでffmpegを使ってmp4をmp3に変換する
   return new Promise<string>((resolve, reject) => {
     ffmpeg(inputPath)
       .output(inputName)

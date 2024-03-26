@@ -4,14 +4,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.transformMp4ToMp3 = exports.postDataToBucket = exports.mainFunction = void 0;
-const fastify_1 = __importDefault(require("fastify"));
 const fluent_ffmpeg_1 = __importDefault(require("fluent-ffmpeg"));
 const fs_1 = require("fs");
 const path_1 = require("path");
 const ts_dotenv_1 = require("ts-dotenv");
 const client_s3_1 = require("@aws-sdk/client-s3");
 const stream_1 = require("stream");
-const server = (0, fastify_1.default)();
 const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
 const ffprobePath = require('@ffprobe-installer/ffprobe').path;
 const FOLDERS = {
@@ -158,11 +156,9 @@ exports.postDataToBucket = postDataToBucket;
 const changeExtension = async (inputPath) => {
     const inputName = (0, path_1.basename)(inputPath); //~~~~~.mp4
     const outputName = (0, path_1.basename)(inputPath, '.mp4') + '.mp3'; //~~~~~.mp3
-    // TODO: ここでffmpegを使ってmp4をmp3に変換する
     return new Promise((resolve, reject) => {
         (0, fluent_ffmpeg_1.default)(inputPath)
             .output(inputName)
-            // .noVideo() // Do not process video
             .audioCodec('copy') // Use the same audio codec to avoid re-encoding
             .on('error', reject)
             .on('start', () => { })
