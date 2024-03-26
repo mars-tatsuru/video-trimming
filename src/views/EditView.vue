@@ -3,6 +3,7 @@ import { ref, onMounted, computed, watch } from 'vue'
 import VideoPlayer from '@/components/VideoPlayer.vue'
 import Trimming from '@/components/Trimming.vue'
 import exportButton from '@/components/ExportButton.vue'
+import ExportMp3Button from '@/components/ExportMp3Button.vue'
 import { mainStore } from '@/stores/main'
 import { useRouter } from 'vue-router'
 import { cloneDeep, isEqual } from 'lodash-es'
@@ -94,7 +95,8 @@ watch(
   <div class="main">
     <VideoPlayer :options="videoOptions" />
     <div class="trimmingWrapper">
-      <exportButton />
+      <ExportMp3Button />
+      <!-- <exportButton /> -->
       <div class="trimming">
         <button class="playButton" type="button" @click="store.startAndStop(store.playFlag)">
           <svg

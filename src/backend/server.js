@@ -57,8 +57,8 @@ server.post('/video', async (request, reply) => {
 });
 server.get('/transform', async (request, reply) => {
     try {
-        const { inputPath } = request.query;
-        const result = await (0, index_1.transformMp4ToMp3)();
+        const { videoName } = request.query;
+        const result = await (0, index_1.transformMp4ToMp3)(videoName);
         reply.send({ result });
     }
     catch (error) {

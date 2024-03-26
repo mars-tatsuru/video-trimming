@@ -1,4 +1,5 @@
 import fastify from 'fastify'
+// https://github.com/fluent-ffmpeg/node-fluent-ffmpeg
 import ffmpeg from 'fluent-ffmpeg'
 import { promises as fsPromises, createWriteStream, WriteStream } from 'fs'
 import { trim } from 'lodash-es'
@@ -137,22 +138,6 @@ export const mainFunction = async (
       })
     }
 
-    // // 署名を60分間有効なURLを取得
-    // FIXME: this is not working in this case.
-    // const getPresignedUrl = async (
-    //   bucket: string,
-    //   key: string,
-    //   expiresIn: number
-    // ): Promise<string> => {
-    //   const objectParams = {
-    //     Bucket: bucket,
-    //     Key: key
-    //   }
-    //   const url = await getSignedUrl(client, new GetObjectCommand(objectParams), { expiresIn })
-    //   return url
-    // }
-    // const dataUrl = await getPresignedUrl(env.BUCKETNAME, `${env.FILEPATH}/${videoName}`, 60 * 60)
-
     const inputFiles = [videoName]
     let trimmedVideoPath: string | undefined = undefined
 
@@ -204,64 +189,63 @@ export const postDataToBucket = async (VideoName: string, fileData: Buffer) => {
 /*******************************************************
  * TRANSFORM MP4 TO MP3
  *******************************************************/
-// const changeExtension = async (inputPath: string) => {
-//   const inputName = basename(inputPath) //~~~~~.mp4
-//   const outputName = trim(inputName, '.mp4') + '.mp3'
-//   const outputPath = join(FOLDERS.OUTPUT, outputName)
+const changeExtension = async (inputPath: string) => {
+  const inputName = basename(inputPath) //~~~~~.mp4
+  const outputName = basename(inputPath, '.mp4') + '.mp3' //~~~~~.mp3
 
-//   return new Promise<string>((resolve, reject) => {
-//     ffmpeg(inputPath)
-//       .outputOptions(['-vn', '-acodec copy'])
-//       .on('error', reject)
-//       .on('start', () => {
-//         // console.log(`Start transforming for ${inputName}`)
-//       })
-//       .on('end', () => {
-//         // console.log(`${inputName} transformed`)
-//         resolve(outputPath)
-//       })
-//       .save(outputPath)
-//   })
-// }
+  // TODO: ここでffmpegを使ってmp4をmp3に変換する
+  return new Promise<string>((resolve, reject) => {
+    ffmpeg(inputPath)
+      .output(inputName)
+      .audioCodec('copy') // Use the same audio codec to avoid re-encoding
+      .on('error', reject)
+      .on('start', () => {})
+      .on('end', () => {
+        const outputPath = join(FOLDERS.OUTPUT, outputName)
+        resolve(outputPath)
+      })
+      .save(join(FOLDERS.OUTPUT, outputName))
+  })
+}
 
-// export const transformMp4ToMp3 = async (videoName?: string) => {
-//   try {
-//     // if bucket === videoName, get AWS S3
-//     const command = new GetObjectCommand({
-//       Bucket: `${env.BUCKETNAME}`,
-//       Key: `${env.FILEPATH}/${'sample.mp4'}`
-//     })
+export const transformMp4ToMp3 = async (videoName: string) => {
+  try {
+    // if bucket === videoName, get AWS S3
+    const command = new GetObjectCommand({
+      Bucket: `${env.BUCKETNAME}`,
+      Key: `${env.FILEPATH}/${videoName}`
+    })
 
-//     // write video to input folder to trim by ffmpeg
-//     const { Body } = await client.send(command)
-//     const writer: WriteStream = createWriteStream(join(FOLDERS.INPUT, 'sample.mp4'))
-//     if (Body instanceof Readable) {
-//       await new Promise((resolve, reject) => {
-//         Body.pipe(writer)
-//         Body.on('end', resolve)
-//         Body.on('error', reject)
-//       })
-//     }
+    // write video to input folder to trim by ffmpeg
+    const { Body } = await client.send(command)
+    const writer: WriteStream = createWriteStream(join(FOLDERS.INPUT, videoName))
+    if (Body instanceof Readable) {
+      await new Promise((resolve, reject) => {
+        Body.pipe(writer)
+        Body.on('end', resolve)
+        Body.on('error', reject)
+      })
+    }
 
-//     const inputFiles = ['sample.mp4']
-//     let trimmedVideoPath: string | undefined = undefined
+    const inputFiles = [videoName]
+    let transformVideoPath: string | undefined = undefined
 
-//     if (!isArray(inputFiles) || inputFiles.length === 0) {
-//       throw new Error(EORRORS.INPUT)
-//     }
+    if (!isArray(inputFiles) || inputFiles.length === 0) {
+      throw new Error(EORRORS.INPUT)
+    }
 
-//     for (const i of inputFiles) {
-//       const iPath = join(FOLDERS.INPUT, 'sample.mp4') // input/~~~~.mp4
-//       const stat = await fsPromises.stat(iPath) // return stats object
+    for (const i of inputFiles) {
+      const iPath = join(FOLDERS.INPUT, videoName) // input/~~~~.mp4
+      const stat = await fsPromises.stat(iPath) // return stats object
 
-//       if (!stat.isDirectory()) {
-//         trimmedVideoPath = await changeExtension(iPath)
-//       }
-//     }
+      if (!stat.isDirectory()) {
+        transformVideoPath = await changeExtension(iPath)
+      }
+    }
 
-//     return trimmedVideoPath
-//   } catch (err) {
-//     onError(err as Error)
-//     return 'Error'
-//   }
-// }
+    return transformVideoPath
+  } catch (err) {
+    onError(err as Error)
+    return 'Error'
+  }
+}
