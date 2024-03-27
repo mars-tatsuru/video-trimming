@@ -71,7 +71,6 @@ const transformVideoFromApi = async () => {
   if (errorFlag) {
     store.waitingForFormatVideoFlag = false
     console.error('Failed to transform video')
-    return
   }
 
   const downloadLink = document.createElement('a')
@@ -86,6 +85,7 @@ const transformVideoFromApi = async () => {
   downloadLink.remove()
 
   store.waitingForFormatVideoFlag = false
+  console.log('transformVideoFromApi')
 
   router.push('/summary')
 }

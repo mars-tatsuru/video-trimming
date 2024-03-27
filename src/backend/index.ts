@@ -190,6 +190,7 @@ const transcriptionWithWhisper = async (transformVideoPath: string | undefined) 
   let response
   let response2
   if (transformVideoPath === undefined) {
+    console.log('path error')
     throw new Error(EORRORS.INPUT)
   } else {
     try {
@@ -200,6 +201,7 @@ const transcriptionWithWhisper = async (transformVideoPath: string | undefined) 
       })
     } catch (err) {
       onError(err as Error)
+      console.error('connect error')
       return 'Error'
     }
 

@@ -163,6 +163,7 @@ const transcriptionWithWhisper = async (transformVideoPath) => {
     let response;
     let response2;
     if (transformVideoPath === undefined) {
+        console.log('path error');
         throw new Error(EORRORS.INPUT);
     }
     else {
@@ -175,6 +176,7 @@ const transcriptionWithWhisper = async (transformVideoPath) => {
         }
         catch (err) {
             onError(err);
+            console.error('connect error');
             return 'Error';
         }
         // response2 = await openai.chat.completions.create({
