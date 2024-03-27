@@ -28,42 +28,42 @@ const props = defineProps({
 /****************************************
  * exportFile logic
  ****************************************/
-async function trimVideo(inputFile: string, startTime: string, duration: string) {
-  const ffmpeg = new FFmpeg()
-  const baseURL = 'https://unpkg.com/@ffmpeg/core-mt@0.12.6/dist/esm'
+// async function trimVideo(inputFile: string, startTime: string, duration: string) {
+//   const ffmpeg = new FFmpeg()
+//   const baseURL = 'https://unpkg.com/@ffmpeg/core-mt@0.12.6/dist/esm'
 
-  await ffmpeg.load({
-    coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-    wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
-    workerURL: await toBlobURL(`${baseURL}/ffmpeg-core.worker.js`, 'text/javascript')
-  })
+//   await ffmpeg.load({
+//     coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+//     wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+//     workerURL: await toBlobURL(`${baseURL}/ffmpeg-core.worker.js`, 'text/javascript')
+//   })
 
-  console.warn('ffmpeg loaded')
+//   console.warn('ffmpeg loaded')
 
-  // Write the file to use in FFmpeg
-  await ffmpeg.writeFile('input.mp4', await fetchFile(inputFile))
+//   // Write the file to use in FFmpeg
+//   await ffmpeg.writeFile('input.mp4', await fetchFile(inputFile))
 
-  console.warn('input.mp4 written')
+//   console.warn('input.mp4 written')
 
-  // Run FFmpeg command to trim the video
-  // too long to wait
-  await ffmpeg.exec(['-i', 'input.mp4', '-ss', startTime, '-t', duration, 'output.mp4'])
+//   // Run FFmpeg command to trim the video
+//   // too long to wait
+//   await ffmpeg.exec(['-i', 'input.mp4', '-ss', startTime, '-t', duration, 'output.mp4'])
 
-  console.warn('output.mp4 written')
+//   console.warn('output.mp4 written')
 
-  // Read the result
-  const data = await ffmpeg.readFile('output.mp4')
-  console.log('data', data)
+//   // Read the result
+//   const data = await ffmpeg.readFile('output.mp4')
+//   console.log('data', data)
 
-  console.warn('output.mp4 read')
+//   console.warn('output.mp4 read')
 
-  // Create a URL for the output file to be used in the browser
-  const url = URL.createObjectURL(new Blob([(data as Uint8Array).buffer], { type: 'video/mp4' }))
+//   // Create a URL for the output file to be used in the browser
+//   const url = URL.createObjectURL(new Blob([(data as Uint8Array).buffer], { type: 'video/mp4' }))
 
-  console.warn('URL created')
+//   console.warn('URL created')
 
-  return url
-}
+//   return url
+// }
 
 /****************************************
  * formatTime
@@ -91,7 +91,7 @@ const handleVideoFromApi = async () => {
   let trimmedVideoUrl = ''
 
   await fetch(
-    `http://localhost:8080/trim?videoName=${store.videoData?.name}&videoCurrentTime=${formatTime(Math.floor(store.currentTime))}&videoDuration=${formatTime(Math.floor(store.videoDuration))}`
+    `http://localhost:8080/trim?videoName=${store.videoData?.name}&videoTrimStartTime=${formatTime(Math.floor(store.trimStart))}&videoTrimEndTime=${formatTime(Math.floor(store.trimEnd))}`
   )
     .then((response) => response.json())
     .then((data) => {
@@ -112,6 +112,31 @@ const handleVideoFromApi = async () => {
 
   store.waitingForFormatVideoFlag = false
 }
+
+/****************************************
+ * handle exportFile by frontend for test
+ ****************************************/
+// const handleVideoFromFrontend = async () => {
+//   store.waitingForFormatVideoFlag = true
+//   trimVideo(
+//     'src/assets/sample.mp4',
+//     formatTime(Math.floor(store.currentTime)),
+//     formatTime(Math.floor(store.videoDuration))
+//   ).then((url) => {
+//     const downloadLink = document.createElement('a')
+//     downloadLink.download = 'video.mp4'
+
+//     downloadLink.href = url
+//     console.log(downloadLink.href)
+
+//     downloadLink.setAttribute('hidden', 'true')
+//     document.body.appendChild(downloadLink)
+//     downloadLink.click()
+//     downloadLink.remove()
+
+//     store.waitingForFormatVideoFlag = false
+//   })
+// }
 </script>
 
 <template>

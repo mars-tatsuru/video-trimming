@@ -35,8 +35,8 @@ server.get('/ping', async (request, reply) => {
 });
 server.get('/trim', async (request, reply) => {
     try {
-        const { videoName, videoCurrentTime, videoDuration } = request.query;
-        const result = await (0, index_1.mainFunction)(videoName, videoCurrentTime, videoDuration);
+        const { videoName, videoTrimStartTime, videoTrimEndTime } = request.query;
+        const result = await (0, index_1.mainFunction)(videoName, videoTrimStartTime, videoTrimEndTime);
         reply.send({ result }); // return trimmedVideo path to frontend
     }
     catch (error) {
@@ -54,6 +54,16 @@ server.post('/video', async (request, reply) => {
         reply.status(500).send({ error: error.message });
     }
     return 'video\n';
+});
+server.get('/transform', async (request, reply) => {
+    try {
+        const { videoName } = request.query;
+        const result = await (0, index_1.transformMp4ToMp3)(videoName);
+        reply.send({ result });
+    }
+    catch (error) {
+        reply.status(500).send({ error: error.message });
+    }
 });
 server.listen({ port: 8080 }, (err, address) => {
     if (err) {

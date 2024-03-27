@@ -66,8 +66,8 @@ const onSelected = async (e: Event) => {
 
   store.videoData = fileObj
 
-  // store video fileをサーバーに送信できるようにする
-  // ファイルデータへ
+  // // store video fileをサーバーに送信できるようにする
+  // // ファイルデータへ
   const fileData = new FormData()
   fileData.append('file', fileObj!)
 

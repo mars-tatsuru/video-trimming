@@ -1,23 +1,15 @@
+// https://github.com/fluent-ffmpeg/node-fluent-ffmpeg
 import fastify from 'fastify'
 import ffmpeg from 'fluent-ffmpeg'
-import { promises as fsPromises, createWriteStream, WriteStream } from 'fs'
-import { trim } from 'lodash-es'
+import { promises as fsPromises, createWriteStream, WriteStream, createReadStream } from 'fs'
 import { basename, join } from 'path'
-import { cdate } from 'cdate'
 import { load } from 'ts-dotenv'
-import {
-  PutObjectCommand,
-  S3Client,
-  ListObjectsV2Command,
-  ListBucketsCommand,
-  GetObjectCommand
-} from '@aws-sdk/client-s3'
+import { PutObjectCommand, S3Client, GetObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { Upload } from '@aws-sdk/lib-storage'
 import { fromIni } from '@aws-sdk/credential-providers'
 import { Readable } from 'stream'
-
-const server = fastify()
+import OpenAI from 'openai'
 
 const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path
 const ffprobePath = require('@ffprobe-installer/ffprobe').path
@@ -43,7 +35,8 @@ const env = load(
     AWS_SECRET_ACCESS_KEY: String,
     REGION: String,
     BUCKETNAME: String,
-    FILEPATH: String
+    FILEPATH: String,
+    OPENAI_KEY: String
   },
   { path: '.env.local' }
 )
@@ -116,8 +109,8 @@ async function trimVideo(inputPath: string, startTime: string, endTime: string) 
 
 export const mainFunction = async (
   videoName: string,
-  videoCurrentTime: string,
-  videoDuration: string
+  videoTrimStartTime: string,
+  videoTrimEndTime: string
 ) => {
   try {
     // if bucket === videoName, get AWS S3
@@ -137,22 +130,6 @@ export const mainFunction = async (
       })
     }
 
-    // // 署名を60分間有効なURLを取得
-    // FIXME: this is not working in this case.
-    // const getPresignedUrl = async (
-    //   bucket: string,
-    //   key: string,
-    //   expiresIn: number
-    // ): Promise<string> => {
-    //   const objectParams = {
-    //     Bucket: bucket,
-    //     Key: key
-    //   }
-    //   const url = await getSignedUrl(client, new GetObjectCommand(objectParams), { expiresIn })
-    //   return url
-    // }
-    // const dataUrl = await getPresignedUrl(env.BUCKETNAME, `${env.FILEPATH}/${videoName}`, 60 * 60)
-
     const inputFiles = [videoName]
     let trimmedVideoPath: string | undefined = undefined
 
@@ -165,7 +142,7 @@ export const mainFunction = async (
       const stat = await fsPromises.stat(iPath) // return stats object
 
       if (!stat.isDirectory()) {
-        trimmedVideoPath = await trimVideo(iPath, videoCurrentTime, videoDuration)
+        trimmedVideoPath = await trimVideo(iPath, videoTrimStartTime, videoTrimEndTime)
       }
     }
 
@@ -198,5 +175,91 @@ export const postDataToBucket = async (VideoName: string, fileData: Buffer) => {
   } catch (err) {
     onError(err as Error)
     console.error(err)
+  }
+}
+
+/*******************************************************
+ * TRANSFORM MP4 TO MP3
+ *******************************************************/
+const openai = new OpenAI({
+  apiKey: env.OPENAI_KEY
+})
+
+const transcriptionWithWhisper = async (transformVideoPath: string | undefined) => {
+  // Whisperモデルを使用してテキスト変換リクエストを送信
+  let response
+  if (transformVideoPath === undefined) {
+    throw new Error(EORRORS.INPUT)
+  } else {
+    response = await openai.audio.transcriptions.create({
+      model: 'whisper-1',
+      file: createReadStream(transformVideoPath!),
+      language: 'ja'
+    })
+  }
+
+  // 変換されたテキストを出力
+  return response
+}
+
+const changeExtension = async (inputPath: string) => {
+  const inputName = basename(inputPath) //~~~~~.mp4
+  const outputName = basename(inputPath, '.mp4') + '.mp3' //~~~~~.mp3
+
+  return new Promise<string>((resolve, reject) => {
+    ffmpeg(inputPath)
+      .output(inputName)
+      .audioCodec('copy') // Use the same audio codec to avoid re-encoding
+      .on('error', reject)
+      .on('start', () => {})
+      .on('end', () => {
+        const outputPath = join(FOLDERS.OUTPUT, outputName)
+        resolve(outputPath)
+      })
+      .save(join(FOLDERS.OUTPUT, outputName))
+  })
+}
+
+export const transformMp4ToMp3 = async (videoName: string) => {
+  try {
+    // if bucket === videoName, get AWS S3
+    const command = new GetObjectCommand({
+      Bucket: `${env.BUCKETNAME}`,
+      Key: `${env.FILEPATH}/${videoName}`
+    })
+
+    // write video to input folder to trim by ffmpeg
+    const { Body } = await client.send(command)
+    const writer: WriteStream = createWriteStream(join(FOLDERS.INPUT, videoName))
+    if (Body instanceof Readable) {
+      await new Promise((resolve, reject) => {
+        Body.pipe(writer)
+        Body.on('end', resolve)
+        Body.on('error', reject)
+      })
+    }
+
+    const inputFiles = [videoName]
+    let transformVideoPath: string | undefined = undefined
+
+    if (!isArray(inputFiles) || inputFiles.length === 0) {
+      throw new Error(EORRORS.INPUT)
+    }
+
+    for (const i of inputFiles) {
+      const iPath = join(FOLDERS.INPUT, videoName) // input/~~~~.mp4
+      const stat = await fsPromises.stat(iPath) // return stats object
+
+      if (!stat.isDirectory()) {
+        transformVideoPath = await changeExtension(iPath)
+      }
+    }
+
+    const text = await transcriptionWithWhisper(transformVideoPath)
+
+    return { transformVideoPath, text }
+  } catch (err) {
+    onError(err as Error)
+    return 'Error'
   }
 }

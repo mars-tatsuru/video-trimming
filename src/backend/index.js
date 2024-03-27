@@ -3,15 +3,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.postDataToBucket = exports.mainFunction = void 0;
-const fastify_1 = __importDefault(require("fastify"));
+exports.transformMp4ToMp3 = exports.postDataToBucket = exports.mainFunction = void 0;
 const fluent_ffmpeg_1 = __importDefault(require("fluent-ffmpeg"));
 const fs_1 = require("fs");
 const path_1 = require("path");
 const ts_dotenv_1 = require("ts-dotenv");
 const client_s3_1 = require("@aws-sdk/client-s3");
 const stream_1 = require("stream");
-const server = (0, fastify_1.default)();
+const openai_1 = __importDefault(require("openai"));
 const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
 const ffprobePath = require('@ffprobe-installer/ffprobe').path;
 const FOLDERS = {
@@ -32,7 +31,8 @@ const env = (0, ts_dotenv_1.load)({
     AWS_SECRET_ACCESS_KEY: String,
     REGION: String,
     BUCKETNAME: String,
-    FILEPATH: String
+    FILEPATH: String,
+    OPENAI_KEY: String
 }, { path: '.env.local' });
 const client = new client_s3_1.S3Client({
     region: env.REGION,
@@ -91,7 +91,7 @@ async function trimVideo(inputPath, startTime, endTime) {
             .save((0, path_1.join)(FOLDERS.OUTPUT, inputName));
     });
 }
-const mainFunction = async (videoName, videoCurrentTime, videoDuration) => {
+const mainFunction = async (videoName, videoTrimStartTime, videoTrimEndTime) => {
     try {
         // if bucket === videoName, get AWS S3
         const command = new client_s3_1.GetObjectCommand({
@@ -108,21 +108,6 @@ const mainFunction = async (videoName, videoCurrentTime, videoDuration) => {
                 Body.on('error', reject);
             });
         }
-        // // 署名を60分間有効なURLを取得
-        // FIXME: this is not working in this case.
-        // const getPresignedUrl = async (
-        //   bucket: string,
-        //   key: string,
-        //   expiresIn: number
-        // ): Promise<string> => {
-        //   const objectParams = {
-        //     Bucket: bucket,
-        //     Key: key
-        //   }
-        //   const url = await getSignedUrl(client, new GetObjectCommand(objectParams), { expiresIn })
-        //   return url
-        // }
-        // const dataUrl = await getPresignedUrl(env.BUCKETNAME, `${env.FILEPATH}/${videoName}`, 60 * 60)
         const inputFiles = [videoName];
         let trimmedVideoPath = undefined;
         if (!isArray(inputFiles) || inputFiles.length === 0) {
@@ -132,7 +117,7 @@ const mainFunction = async (videoName, videoCurrentTime, videoDuration) => {
             const iPath = (0, path_1.join)(FOLDERS.INPUT, videoName); // input/~~~~.mp4
             const stat = await fs_1.promises.stat(iPath); // return stats object
             if (!stat.isDirectory()) {
-                trimmedVideoPath = await trimVideo(iPath, videoCurrentTime, videoDuration);
+                trimmedVideoPath = await trimVideo(iPath, videoTrimStartTime, videoTrimEndTime);
             }
         }
         return trimmedVideoPath;
@@ -167,3 +152,79 @@ const postDataToBucket = async (VideoName, fileData) => {
     }
 };
 exports.postDataToBucket = postDataToBucket;
+/*******************************************************
+ * TRANSFORM MP4 TO MP3
+ *******************************************************/
+const openai = new openai_1.default({
+    apiKey: env.OPENAI_KEY
+});
+const transcriptionWithWhisper = async (transformVideoPath) => {
+    // Whisperモデルを使用してテキスト変換リクエストを送信
+    let response;
+    if (transformVideoPath === undefined) {
+        throw new Error(EORRORS.INPUT);
+    }
+    else {
+        response = await openai.audio.transcriptions.create({
+            model: 'whisper-1',
+            file: (0, fs_1.createReadStream)(transformVideoPath),
+            language: 'ja'
+        });
+    }
+    // 変換されたテキストを出力
+    return response;
+};
+const changeExtension = async (inputPath) => {
+    const inputName = (0, path_1.basename)(inputPath); //~~~~~.mp4
+    const outputName = (0, path_1.basename)(inputPath, '.mp4') + '.mp3'; //~~~~~.mp3
+    return new Promise((resolve, reject) => {
+        (0, fluent_ffmpeg_1.default)(inputPath)
+            .output(inputName)
+            .audioCodec('copy') // Use the same audio codec to avoid re-encoding
+            .on('error', reject)
+            .on('start', () => { })
+            .on('end', () => {
+            const outputPath = (0, path_1.join)(FOLDERS.OUTPUT, outputName);
+            resolve(outputPath);
+        })
+            .save((0, path_1.join)(FOLDERS.OUTPUT, outputName));
+    });
+};
+const transformMp4ToMp3 = async (videoName) => {
+    try {
+        // if bucket === videoName, get AWS S3
+        const command = new client_s3_1.GetObjectCommand({
+            Bucket: `${env.BUCKETNAME}`,
+            Key: `${env.FILEPATH}/${videoName}`
+        });
+        // write video to input folder to trim by ffmpeg
+        const { Body } = await client.send(command);
+        const writer = (0, fs_1.createWriteStream)((0, path_1.join)(FOLDERS.INPUT, videoName));
+        if (Body instanceof stream_1.Readable) {
+            await new Promise((resolve, reject) => {
+                Body.pipe(writer);
+                Body.on('end', resolve);
+                Body.on('error', reject);
+            });
+        }
+        const inputFiles = [videoName];
+        let transformVideoPath = undefined;
+        if (!isArray(inputFiles) || inputFiles.length === 0) {
+            throw new Error(EORRORS.INPUT);
+        }
+        for (const i of inputFiles) {
+            const iPath = (0, path_1.join)(FOLDERS.INPUT, videoName); // input/~~~~.mp4
+            const stat = await fs_1.promises.stat(iPath); // return stats object
+            if (!stat.isDirectory()) {
+                transformVideoPath = await changeExtension(iPath);
+            }
+        }
+        const text = await transcriptionWithWhisper(transformVideoPath);
+        return { transformVideoPath, text };
+    }
+    catch (err) {
+        onError(err);
+        return 'Error';
+    }
+};
+exports.transformMp4ToMp3 = transformMp4ToMp3;

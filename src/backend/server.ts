@@ -1,7 +1,7 @@
 import fastify from 'fastify'
 import multiPart from '@fastify/multipart'
 import cors from '@fastify/cors'
-import { mainFunction, postDataToBucket } from './index'
+import { mainFunction, postDataToBucket, transformMp4ToMp3 } from './index'
 
 //TODO: 実際にサーバーに投げて、そこから動画を取得してトリミングする
 // https://go-tech.blog/nodejs/ts-aws-sdk-s3/#index_id6
@@ -35,8 +35,8 @@ server.get('/ping', async (request, reply) => {
 
 server.get('/trim', async (request: any, reply: any) => {
   try {
-    const { videoName, videoCurrentTime, videoDuration } = request.query
-    const result = await mainFunction(videoName, videoCurrentTime, videoDuration)
+    const { videoName, videoTrimStartTime, videoTrimEndTime } = request.query
+    const result = await mainFunction(videoName, videoTrimStartTime, videoTrimEndTime)
 
     reply.send({ result }) // return trimmedVideo path to frontend
   } catch (error: any) {
@@ -56,6 +56,16 @@ server.post('/video', async (request: any, reply: any) => {
   }
 
   return 'video\n'
+})
+
+server.get('/transform', async (request: any, reply: any) => {
+  try {
+    const { videoName } = request.query
+    const result = await transformMp4ToMp3(videoName)
+    reply.send({ result })
+  } catch (error: any) {
+    reply.status(500).send({ error: error.message })
+  }
 })
 
 server.listen({ port: 8080 }, (err, address) => {
