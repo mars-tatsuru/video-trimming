@@ -209,6 +209,7 @@ const changeExtension = async (inputPath: string) => {
   return new Promise<string>((resolve, reject) => {
     ffmpeg(inputPath)
       .output(inputName)
+      .noVideo() // Remove video stream
       .audioCodec('copy') // Use the same audio codec to avoid re-encoding
       .on('error', reject)
       .on('start', () => {})

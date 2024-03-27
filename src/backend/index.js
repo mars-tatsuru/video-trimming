@@ -180,6 +180,7 @@ const changeExtension = async (inputPath) => {
     return new Promise((resolve, reject) => {
         (0, fluent_ffmpeg_1.default)(inputPath)
             .output(inputName)
+            .noVideo() // Remove video stream
             .audioCodec('copy') // Use the same audio codec to avoid re-encoding
             .on('error', reject)
             .on('start', () => { })
