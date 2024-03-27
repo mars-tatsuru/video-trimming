@@ -188,6 +188,7 @@ const openai = new OpenAI({
 const transcriptionWithWhisper = async (transformVideoPath: string | undefined) => {
   // Whisperモデルを使用してテキスト変換リクエストを送信
   let response
+  let response2
   if (transformVideoPath === undefined) {
     throw new Error(EORRORS.INPUT)
   } else {
@@ -196,9 +197,32 @@ const transcriptionWithWhisper = async (transformVideoPath: string | undefined) 
       file: createReadStream(transformVideoPath!),
       language: 'ja'
     })
+
+    // response2 = await openai.chat.completions.create({
+    //   model: 'gpt-4',
+    //   messages: [
+    //     {
+    //       role: 'system',
+    //       content: '文章を要約するAIになってください。'
+    //     },
+    //     {
+    //       role: 'user',
+    //       content: `下記文章はニュース番組の音声データをテキスト化したものです。\n
+    //       ${response} \n
+    //       この文章を要約してください。
+    //       `
+    //     }
+    //   ],
+    //   temperature: 1,
+    //   max_tokens: 4000,
+    //   top_p: 1,
+    //   frequency_penalty: 0,
+    //   presence_penalty: 0
+    // })
   }
 
   // 変換されたテキストを出力
+  // console.log(response2)
   return response
 }
 
