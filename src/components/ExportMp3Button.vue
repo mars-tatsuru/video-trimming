@@ -52,6 +52,7 @@ function formatTime(seconds: number) {
 const transformVideoFromApi = async () => {
   store.waitingForFormatVideoFlag = true
   let transformVideoUrl = ''
+  let errorFlag = false
 
   await fetch(`http://localhost:8080/transform?videoName=${store.videoData?.name}`)
     .then((response) => response.json())
@@ -60,7 +61,18 @@ const transformVideoFromApi = async () => {
       transformVideoUrl = result.transformVideoPath
       store.videoSummaryText = result.text.text
       console.log(result.text.text)
+
+      if (error) {
+        console.error(error)
+        errorFlag = true
+      }
     })
+
+  if (errorFlag) {
+    store.waitingForFormatVideoFlag = false
+    console.error('Failed to transform video')
+    return
+  }
 
   const downloadLink = document.createElement('a')
   downloadLink.download = 'video.mp3'

@@ -192,11 +192,16 @@ const transcriptionWithWhisper = async (transformVideoPath: string | undefined) 
   if (transformVideoPath === undefined) {
     throw new Error(EORRORS.INPUT)
   } else {
-    response = await openai.audio.transcriptions.create({
-      model: 'whisper-1',
-      file: createReadStream(transformVideoPath!),
-      language: 'ja'
-    })
+    try {
+      response = await openai.audio.transcriptions.create({
+        model: 'whisper-1',
+        file: createReadStream(transformVideoPath!),
+        language: 'ja'
+      })
+    } catch (err) {
+      onError(err as Error)
+      return 'Error'
+    }
 
     // response2 = await openai.chat.completions.create({
     //   model: 'gpt-4',
