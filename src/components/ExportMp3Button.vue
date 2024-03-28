@@ -69,7 +69,8 @@ const transformVideoFromApi = async () => {
     })
 
   if (errorFlag) {
-    store.waitingForFormatVideoFlag = false
+    store.waitingForFormatVideoFlag = true
+    window.alert('Failed to transform video')
     console.error('Failed to transform video')
   }
 

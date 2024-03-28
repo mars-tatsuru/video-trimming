@@ -193,6 +193,7 @@ const transcriptionWithWhisper = async (transformVideoPath: string | undefined) 
     console.log('path error')
     throw new Error(EORRORS.INPUT)
   } else {
+    // FIXME: ここでエラーが発生する connect error
     try {
       response = await openai.audio.transcriptions.create({
         model: 'whisper-1',
@@ -201,35 +202,45 @@ const transcriptionWithWhisper = async (transformVideoPath: string | undefined) 
       })
     } catch (err) {
       onError(err as Error)
-      console.error('connect error')
+      console.error('connect error', err)
       return 'Error'
     }
 
-    // response2 = await openai.chat.completions.create({
-    //   model: 'gpt-4',
-    //   messages: [
-    //     {
-    //       role: 'system',
-    //       content: '文章を要約するAIになってください。'
-    //     },
-    //     {
-    //       role: 'user',
-    //       content: `下記文章はニュース番組の音声データをテキスト化したものです。\n
-    //       ${response} \n
-    //       この文章を要約してください。
-    //       `
-    //     }
-    //   ],
-    //   temperature: 1,
-    //   max_tokens: 4000,
-    //   top_p: 1,
-    //   frequency_penalty: 0,
-    //   presence_penalty: 0
-    // })
+    // TODO: プロンプトを変更する
+    // TODO: 出力するjsonデータを考える
+    // TODO: 出力する項目の揺らぎをなくす
+    // TODO: 人間味のある文章にする
+    response2 = await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: [
+        {
+          role: 'system',
+          content: `文章を要約するAIになってください。
+          [
+            { title: 'news1', summary: 'lorem ipsum dolor sit amet' },
+            { title: 'news2', summary: 'lorem ipsum dolor sit amet 2' }
+          ]}
+          このようなjsonで全てのデータをまとめて返してください。
+          `
+        },
+        {
+          role: 'user',
+          content: `下記文章はニュース番組の音声データをテキスト化したものです。\n
+          ${response.text} \n
+          この文章をニュースごとに分けて、要約してください。
+          `
+        }
+      ],
+      temperature: 1,
+      max_tokens: 4000,
+      top_p: 1,
+      frequency_penalty: 0,
+      presence_penalty: 0
+    })
   }
 
   // 変換されたテキストを出力
-  // console.log(response2)
+  console.log(response2.choices[0].message.content)
   return response
 }
 

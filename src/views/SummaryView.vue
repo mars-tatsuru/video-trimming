@@ -67,9 +67,10 @@ onMounted(() => {
 
 <template>
   <div class="main">
-    <div v-if="store.videoSummaryText" class="summaryInput">
+    <div class="summaryInput">
       <p>動画全体文字起こし</p>
-      <textarea v-model="store.videoSummaryText" />
+      <textarea v-if="store.videoSummaryText" v-model="store.videoSummaryText" />
+      <p v-else>fetch error</p>
     </div>
     <!-- <div v-if="!store.videoSummaryText" class="loading">
       <span class="loadingSvg">
