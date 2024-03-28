@@ -92,8 +92,8 @@ const onSelected = async (e: Event) => {
 }
 </script>
 
+<!-- TODO: ファイルサイズが大きいものを上げるときのローディング実装 -->
 <template>
-  // TODO: ファイルサイズが大きいものを上げるときのローディング実装
   <div class="main">
     <div class="uploadArea">
       <div class="uploadMessage">

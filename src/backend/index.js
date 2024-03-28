@@ -135,6 +135,7 @@ exports.mainFunction = mainFunction;
  * ref: https://fukatsu.tech/ffmpeg-lambda-nodejs
  *******************************************************************/
 // post data to s3 bucket(test-koike/video)
+// TODO: https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/mpu-upload-object.html
 const postDataToBucket = async (VideoName, fileData) => {
     const command = new client_s3_1.PutObjectCommand({
         Bucket: `${env.BUCKETNAME}`,
