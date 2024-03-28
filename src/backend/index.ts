@@ -4,7 +4,12 @@ import ffmpeg from 'fluent-ffmpeg'
 import { promises as fsPromises, createWriteStream, WriteStream, createReadStream } from 'fs'
 import { basename, join } from 'path'
 import { load } from 'ts-dotenv'
-import { PutObjectCommand, S3Client, GetObjectCommand } from '@aws-sdk/client-s3'
+import {
+  PutObjectCommand,
+  S3Client,
+  GetObjectCommand,
+  CreateMultipartUploadCommand
+} from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { Upload } from '@aws-sdk/lib-storage'
 import { fromIni } from '@aws-sdk/credential-providers'
@@ -161,6 +166,7 @@ export const mainFunction = async (
  *******************************************************************/
 
 // post data to s3 bucket(test-koike/video)
+// TODO: https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/mpu-upload-object.html
 export const postDataToBucket = async (VideoName: string, fileData: Buffer) => {
   const command = new PutObjectCommand({
     Bucket: `${env.BUCKETNAME}`,

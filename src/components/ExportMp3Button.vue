@@ -54,6 +54,7 @@ const transformVideoFromApi = async () => {
   let transformVideoUrl = ''
   let errorFlag = false
 
+  // TODO: リアルタイムログの反映
   await fetch(`http://localhost:8080/transform?videoName=${store.videoData?.name}`)
     .then((response) => response.json())
     .then((data) => {

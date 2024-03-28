@@ -181,19 +181,21 @@ const transcriptionWithWhisper = async (transformVideoPath) => {
             return 'Error';
         }
         // TODO: プロンプトを変更する
-        // ファインチューニング？？
+        // TODO: 出力するjsonデータを考える
+        // TODO: 出力する項目の揺らぎをなくす
+        // TODO: 人間味のある文章にする
         response2 = await openai.chat.completions.create({
             model: 'gpt-4',
             messages: [
                 {
                     role: 'system',
                     content: `文章を要約するAIになってください。
-           [
-             { title: 'news1', summary: 'lorem ipsum dolor sit amet' },
-             { title: 'news2', summary: 'lorem ipsum dolor sit amet 2' }
-           ]}
+          [
+            { title: 'news1', summary: 'lorem ipsum dolor sit amet' },
+            { title: 'news2', summary: 'lorem ipsum dolor sit amet 2' }
+          ]}
           このようなjsonで全てのデータをまとめて返してください。
-           `
+          `
                 },
                 {
                     role: 'user',
