@@ -60,8 +60,8 @@ const transformVideoFromApi = async () => {
     .then((data) => {
       const { result, error } = data
       transformVideoUrl = result.transformVideoPath
-      store.videoSummaryText = result.text.text
-      console.log(result.text.text)
+      store.videoSummaryArray = result.text.text
+      console.log('result', result.text)
 
       if (error) {
         console.error(error)

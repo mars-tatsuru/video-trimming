@@ -9,7 +9,7 @@ export const mainStore = defineStore('counter', () => {
   const videoDuration = ref<number>(0)
   const playFlag = ref<boolean>(false)
   const waitingForFormatVideoFlag = ref<boolean>(false)
-  const videoSummaryText = ref<string>('')
+  const videoSummaryArray = ref<string>('')
 
   const startAndStop = (flag: boolean) => {
     if (!flag) {
@@ -27,7 +27,7 @@ export const mainStore = defineStore('counter', () => {
     videoDuration,
     playFlag,
     waitingForFormatVideoFlag,
-    videoSummaryText,
+    videoSummaryArray,
     startAndStop
   }
 })

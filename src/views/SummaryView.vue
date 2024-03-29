@@ -15,11 +15,13 @@ const router = useRouter()
 
 let newsData = ref() // will later be filled with the data
 onMounted(() => {
-  // json parse
-  let req = new XMLHttpRequest()
-  req.open('GET', 'http://localhost:5173/newsData.json', false)
-  req.send(null)
-  if (req.status == 200) newsData.value = JSON.parse(req.responseText)
+  // // test json parse for frontend
+  // let req = new XMLHttpRequest()
+  // req.open('GET', 'http://localhost:5173/newsData.json', false)
+  // req.send(null)
+  // if (req.status == 200) newsData.value = JSON.parse(req.responseText)
+  newsData.value = store.videoSummaryArray
+  console.log('summary', newsData.value)
 })
 </script>
 

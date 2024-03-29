@@ -69,19 +69,19 @@ onMounted(() => {
  * beforeEach
  ****************************************/
 // Display an alert if the edited data has not been saved before navigating to another page.
-router.beforeEach((to, from, next) => {
-  if (isEditing.value) {
-    const answer = window.confirm('編集中のデータが全て破棄されますが、よろしいですか？')
-    if (answer) {
-      resetForm()
-      next()
-    } else {
-      next(false)
-    }
-  } else {
-    next()
-  }
-})
+// router.beforeEach((to, from, next) => {
+//   if (isEditing.value) {
+//     const answer = window.confirm('編集中のデータが全て破棄されますが、よろしいですか？')
+//     if (answer) {
+//       resetForm()
+//       next()
+//     } else {
+//       next(false)
+//     }
+//   } else {
+//     next()
+//   }
+// })
 
 watch(
   () => store.currentTime,

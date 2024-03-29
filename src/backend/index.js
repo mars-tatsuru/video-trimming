@@ -190,12 +190,14 @@ const transcriptionWithWhisper = async (transformVideoPath) => {
             messages: [
                 {
                     role: 'system',
-                    content: `文章を要約するAIになってください。
+                    content: `
+          文章を要約するAIになってください。\n\n
           [
-            { title: 'news1', summary: 'lorem ipsum dolor sit amet' },
-            { title: 'news2', summary: 'lorem ipsum dolor sit amet 2' }
-          ]}
-          このようなjsonで全てのデータをまとめて返してください。
+            { title: 'title', summary: 'Whole summary', tags: ['スポーツ', '事件', '健康', '教育'] },
+            { title: 'news title', summary: 'news section summary', tags: ['ニュース', '法律'] },
+            { title: 'news title', summary: 'news section summary', tags: ['ニュース', '教育'] }
+          ] \n\n
+          上記のように全体の要約と、ニュースごとの要約に分けて、配列から始まるjson形式のデータを返してください。
           `
                 },
                 {
@@ -206,7 +208,7 @@ const transcriptionWithWhisper = async (transformVideoPath) => {
           `
                 }
             ],
-            temperature: 1,
+            temperature: 0,
             max_tokens: 4000,
             top_p: 1,
             frequency_penalty: 0,
@@ -215,7 +217,7 @@ const transcriptionWithWhisper = async (transformVideoPath) => {
     }
     // 変換されたテキストを出力
     console.log(response2.choices[0].message.content);
-    return response;
+    return response2.choices[0].message.content;
 };
 const changeExtension = async (inputPath) => {
     const inputName = (0, path_1.basename)(inputPath); //~~~~~.mp4
@@ -264,6 +266,7 @@ const transformMp4ToMp3 = async (videoName) => {
             }
         }
         const text = await transcriptionWithWhisper(transformVideoPath);
+        console.log('text', text);
         return { transformVideoPath, text };
     }
     catch (err) {
