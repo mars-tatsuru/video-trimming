@@ -224,11 +224,11 @@ const transcriptionWithWhisper = async (transformVideoPath: string | undefined) 
           content: `
           文章を要約するAIになってください。\n\n
           [
-            { title: 'title', summary: 'Whole summary', tags: ['スポーツ', '事件', '健康', '教育'] },
-            { title: 'news title', summary: 'news section summary', tags: ['ニュース', '法律'] },
-            { title: 'news title', summary: 'news section summary', tags: ['ニュース', '教育'] }
+            { whole: true, title: 'title', summary: 'Whole summary', tags: ['スポーツ', '事件', '健康', '教育'] },
+            { whole: false, title: 'news title', summary: 'news section summary', tags: ['ニュース', '法律'] },
+            { whole: false, title: 'news title', summary: 'news section summary', tags: ['ニュース', '教育'] }
           ] \n\n
-          上記のように全体の要約と、ニュースごとの要約に分けて、配列から始まるjson形式のデータを返してください。
+          上記のようなjsonString形式で要約をお願いします。
           `
         },
         {
@@ -307,9 +307,11 @@ export const transformMp4ToMp3 = async (videoName: string) => {
     }
 
     const text = await transcriptionWithWhisper(transformVideoPath)
-    console.log('text', text)
+    // textをarrayに変換。\nを削除
+    const jsonString = text?.replace(/\n/g, '')
+    const data = JSON.parse(jsonString as string)
 
-    return { transformVideoPath, text }
+    return { transformVideoPath, data }
   } catch (err) {
     onError(err as Error)
     return 'Error'
