@@ -163,17 +163,21 @@ const transcriptionWithWhisper = async (transformVideoPath) => {
     // Whisperモデルを使用してテキスト変換リクエストを送信
     let response;
     let response2;
+    let response3;
     if (transformVideoPath === undefined) {
         console.log('path error');
         throw new Error(EORRORS.INPUT);
     }
     else {
         // FIXME: ここでエラーが発生する connect error
+        // TODO: 分数を出す
         try {
             response = await openai.audio.transcriptions.create({
                 model: 'whisper-1',
                 file: (0, fs_1.createReadStream)(transformVideoPath),
-                language: 'ja'
+                language: 'ja',
+                response_format: 'verbose_json',
+                timestamp_granularities: ['segment']
             });
         }
         catch (err) {
@@ -185,6 +189,7 @@ const transcriptionWithWhisper = async (transformVideoPath) => {
         // TODO: 出力するjsonデータを考える
         // TODO: 出力する項目の揺らぎをなくす
         // TODO: 人間味のある文章にする
+        // TODO: 分数を出す
         response2 = await openai.chat.completions.create({
             model: 'gpt-4',
             messages: [
@@ -214,9 +219,17 @@ const transcriptionWithWhisper = async (transformVideoPath) => {
             frequency_penalty: 0,
             presence_penalty: 0
         });
+        response3 = await openai.audio.transcriptions.create({
+            model: 'whisper-1',
+            file: (0, fs_1.createReadStream)(transformVideoPath),
+            language: 'ja',
+            response_format: 'verbose_json',
+            timestamp_granularities: ['segment']
+        });
     }
     // 変換されたテキストを出力
     console.log(response2.choices[0].message.content);
+    console.log('response3', response3);
     return response2.choices[0].message.content;
 };
 const changeExtension = async (inputPath) => {
