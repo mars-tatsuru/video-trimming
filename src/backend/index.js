@@ -163,7 +163,8 @@ const transcriptionWithWhisper = async (transformVideoPath) => {
     // Whisperモデルを使用してテキスト変換リクエストを送信
     let response;
     let response2;
-    let response3;
+    // responseをjsonからarrayに変換
+    let dataArr = [];
     if (transformVideoPath === undefined) {
         console.log('path error');
         throw new Error(EORRORS.INPUT);
@@ -185,52 +186,130 @@ const transcriptionWithWhisper = async (transformVideoPath) => {
             console.error('connect error', err);
             return 'Error';
         }
+        // responseの中のstart, end, textを取得
+        // dataArr = [{
+        //   start: 0,
+        //   end: 10,
+        //   text: 'こんにちは'
+        // },
+        // {
+        //   start: 10,
+        //   end: 20,
+        //   text: 'こんばんは'
+        // }]
+        Object.entries(response).forEach((item) => {
+            const key = item[0];
+            const value = item[1];
+            if (key === 'segments') {
+                value.forEach((item) => {
+                    const start = Math.floor(item.start);
+                    const end = Math.floor(item.end);
+                    const text = item.text;
+                    dataArr.push({ start, end, text });
+                });
+            }
+        });
+        console.log(dataArr);
+        // responseをdataArrに入れる
+        // dataArr = [
+        //  allText: 'こんにちは こんばんは',
+        // {
+        //   start: 0,
+        //   end: 10,
+        //   text: 'こんにちは'
+        // },
+        // {
+        //   start: 10,
+        //   end: 20,
+        //   text: 'こんばんは'
+        // }]
+        dataArr.unshift({ allText: response.text });
+        // `allText`を含む文字列を表示
+        let result = dataArr[0].allText + '\n';
+        // 各要素をループして表示
+        for (let i = 1; i < dataArr.length; i++) {
+            const { start, end, text } = dataArr[i];
+            result += `start: ${start}, end: ${end}, text: ${text}\n`;
+        }
+        console.log(result);
         // TODO: プロンプトを変更する
         // TODO: 出力するjsonデータを考える
         // TODO: 出力する項目の揺らぎをなくす
         // TODO: 人間味のある文章にする
         // TODO: 分数を出す
+        // TODO: 文章の長さを変更できるようにする
         response2 = await openai.chat.completions.create({
-            model: 'gpt-4',
+            model: 'gpt-3.5-turbo-16k',
             messages: [
+                // {
+                //   role: 'system',
+                //   content: `
+                //   文章を要約するAIになってください。\n\n
+                //   [
+                //     { whole: true, title: 'title', summary: 'Whole summary', tags: ['スポーツ', '事件', '健康', '教育'] },
+                //     { whole: false, title: 'news title', summary: 'news section summary', tags: ['ニュース', '法律'] },
+                //     { whole: false, title: 'news title', summary: 'news section summary', tags: ['ニュース', '教育'] }
+                //   ] \n\n
+                //   上記のようなjsonString形式で要約をお願いします。
+                //   `
+                // },
+                // {
+                //   role: 'system',
+                //   content: `
+                //   文章を要約するAIになってください。\n\n
+                //   [
+                //     { whole: true, start: 'start second', end: 'end second', title: 'title', summary: 'Whole summary', tags: ['スポーツ', '事件', '健康', '教育'] },
+                //     { whole: false, start: 'start second', end: 'end second', title: 'news title', summary: 'news section summary', tags: ['ニュース', '法律'] },
+                //     { whole: false, start: 'start second', end: 'end second', title: 'news title', summary: 'news section summary', tags: ['ニュース', '教育'] }
+                //   ]\n\n
+                //   上記のようなjsonString形式で要約したデータを表示してください。\n
+                //   全体要約は500文字以内、section要約は300文字以内でお願いします。
+                //   `
+                // },
                 {
                     role: 'system',
                     content: `
-          文章を要約するAIになってください。\n\n
+          Be the AI that summarizes the text.\n\n
           [
-            { whole: true, title: 'title', summary: 'Whole summary', tags: ['スポーツ', '事件', '健康', '教育'] },
-            { whole: false, title: 'news title', summary: 'news section summary', tags: ['ニュース', '法律'] },
-            { whole: false, title: 'news title', summary: 'news section summary', tags: ['ニュース', '教育'] }
-          ] \n\n
-          上記のようなjsonString形式で要約をお願いします。
+            { whole: true, start: 'start second', end: 'end second', title: 'title', summary: 'Whole summary', tags: ['スポーツ', '事件', '健康', '教育'] },
+            { whole: false, start: 'start second', end: 'end second', title: 'news title', summary: 'news section summary', tags: ['ニュース', '法律'] },
+            { whole: false, start: 'start second', end: 'end second', title: 'news title', summary: 'news section summary', tags: ['ニュース', '教育'] }
+          ]\n\n
+          Please give me a summary statement in jsonString format as above array.\n
+          Please limit the overall summary to 500 words and the section summary to 300 words.
+          Whole should be true for a overall summary, and whole should be false for a section summary.
           `
                 },
+                // {
+                //   role: 'user',
+                //   content: `下記文章はニュース番組の音声データをテキスト化したものです。\n
+                //   ${response.text} \n
+                //   この文章をニュースごとに分けて、要約してください。
+                //   `
+                // }
+                // {
+                //   role: 'user',
+                //   content: `下記データを使用して、全体要約とニュースごとの要約し、要約した箇所が何秒(start)から何秒(end)であったかを表示してください。\n
+                //   ${result}
+                //   `
+                // }
                 {
                     role: 'user',
-                    content: `下記文章はニュース番組の音声データをテキスト化したものです。\n
-          ${response.text} \n
-          この文章をニュースごとに分けて、要約してください。
+                    content: `Using the data below, summarize the entire story and each news item, and indicate how many seconds (start) to how many seconds (end) the summarized section lasted.\n
+          ${result}
           `
                 }
             ],
-            temperature: 0,
-            max_tokens: 4000,
+            temperature: 1,
+            max_tokens: 7500,
             top_p: 1,
             frequency_penalty: 0,
             presence_penalty: 0
         });
-        response3 = await openai.audio.transcriptions.create({
-            model: 'whisper-1',
-            file: (0, fs_1.createReadStream)(transformVideoPath),
-            language: 'ja',
-            response_format: 'verbose_json',
-            timestamp_granularities: ['segment']
-        });
     }
     // 変換されたテキストを出力
     console.log(response2.choices[0].message.content);
-    console.log('response3', response3);
-    return response2.choices[0].message.content;
+    return response2 ? response2.choices[0].message.content : 'Error';
 };
 const changeExtension = async (inputPath) => {
     const inputName = (0, path_1.basename)(inputPath); //~~~~~.mp4

@@ -17,11 +17,12 @@ let newsData = ref() // will later be filled with the data
 onMounted(() => {
   // // test json parse for frontend
   // let req = new XMLHttpRequest()
-  // req.open('GET', 'http://localhost:5173/newsData.json', false)
+  // req.open('GET', 'http://localhost:5173/whisper.json', false)
   // req.send(null)
   // if (req.status == 200) newsData.value = JSON.parse(req.responseText)
+
   newsData.value = store.videoSummaryArray
-  console.log('summary', newsData.value)
+  console.log(newsData.value)
 })
 </script>
 
@@ -29,9 +30,11 @@ onMounted(() => {
   <div class="main">
     <div class="summaryWrapper">
       <h1>要約結果画面</h1>
-      <div v-for="{ whole, title, summary, tags } in newsData" class="summaryItem">
+      <div v-for="{ whole, start, end, title, summary, tags } in newsData" class="summaryItem">
         <div v-if="whole" class="summaryItemContents">
-          <h2>ページ全体要約</h2>
+          <h2>
+            ページ全体要約 <span>{{ start }} ~ {{ end }}秒</span>
+          </h2>
           <textarea v-text="summary" />
           <div class="tags">
             <p v-for="(tag, index) in tags">
@@ -40,7 +43,9 @@ onMounted(() => {
           </div>
         </div>
         <div v-else class="summaryItemContents">
-          <h2>{{ title }}</h2>
+          <h2>
+            {{ title }} <span>{{ start }} ~ {{ end }}秒</span>
+          </h2>
           <textarea v-text="summary" />
           <div class="tags">
             <p v-for="(tag, index) in tags">
@@ -77,9 +82,18 @@ onMounted(() => {
 
       .summaryItemContents {
         h2 {
+          display: flex;
+          align-items: center;
           font-size: 20px;
           font-weight: bold;
           margin-bottom: 10px;
+
+          span {
+            font-size: 14px;
+            font-weight: normal;
+            margin-left: 10px;
+            color: #666;
+          }
         }
 
         textarea {
