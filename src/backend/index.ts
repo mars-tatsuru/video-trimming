@@ -191,6 +191,7 @@ const openai = new OpenAI({
   apiKey: env.OPENAI_KEY
 })
 
+//FIXME: 料金発生部分
 const transcriptionWithWhisper = async (transformVideoPath: string | undefined) => {
   // Whisperモデルを使用してテキスト変換リクエストを送信
   let response
@@ -316,7 +317,6 @@ const transcriptionWithWhisper = async (transformVideoPath: string | undefined) 
           ]\n\n
           Please give me a summary statement in jsonString format as above array.\n
           Please limit the overall summary to 500 words and the section summary to 300 words.
-          Whole should be true for a overall summary, and whole should be false for a section summary.
           `
         },
         // {
@@ -371,6 +371,63 @@ const changeExtension = async (inputPath: string) => {
   })
 }
 
+// 動画をmp3に変換し、10分ごとに分割してoutputフォルダに保存
+const changeExtensionAndSplit = async (inputPath: string) => {
+  const inputName = basename(inputPath) //~~~~~.mp4
+  const outputName = basename(inputPath, '.mp4') //~~~~~.mp3
+
+  // ffmpeg(inputPath)の動画の長さを取得
+  const duration = await new Promise<number>((resolve, reject) => {
+    ffmpeg.ffprobe(inputPath, (err, metadata) => {
+      if (err) {
+        reject(err)
+      } else {
+        resolve(metadata.format.duration as number)
+      }
+    })
+  })
+
+  let startTime = 0
+  let splitTime = 60 // 1 minute
+
+  let pathArr: string[] = []
+
+  return new Promise<string>((resolve, reject) => {
+    const promises: Promise<void>[] = []
+
+    for (let i = 0; startTime < duration; i++) {
+      const promise = new Promise<void>((resolvePromise, rejectPromise) => {
+        ffmpeg(inputPath)
+          .output(inputName)
+          .noVideo() // Remove video stream
+          .audioCodec('copy') // Use the same audio codec to avoid re-encoding
+          .addInputOptions([`-ss ${startTime}`, `-t ${splitTime}`]) // Start and duration
+          .on('error', rejectPromise)
+          .on('end', () => {
+            const outputPath = join(FOLDERS.PREROLL, `${outputName}-${i}.mp3`)
+            pathArr.push(outputPath)
+            console.log('pathArr', pathArr)
+            resolvePromise() // Resolve the promise after completion
+          })
+          .save(join(FOLDERS.PREROLL, `${outputName}-${i}.mp3`))
+      })
+
+      promises.push(promise)
+
+      startTime += splitTime
+      splitTime += 60
+    }
+
+    // すべてのPromiseが完了するのを待つ
+    Promise.all(promises)
+      .then(() => {
+        // すべてのpathを返す
+        resolve(pathArr.join(','))
+      })
+      .catch(reject)
+  })
+}
+
 export const transformMp4ToMp3 = async (videoName: string) => {
   try {
     // if bucket === videoName, get AWS S3
@@ -402,11 +459,28 @@ export const transformMp4ToMp3 = async (videoName: string) => {
       const stat = await fsPromises.stat(iPath) // return stats object
 
       if (!stat.isDirectory()) {
-        transformVideoPath = await changeExtension(iPath)
+        await changeExtensionAndSplit(iPath).then((path) => {
+          transformVideoPath = path
+        })
+
+        console.log('transformVideoPath', transformVideoPath)
+
+        // transformVideoPath = await changeExtension(iPath)
       }
     }
 
-    const text = await transcriptionWithWhisper(transformVideoPath)
+    // const text = await transcriptionWithWhisper(transformVideoPath)
+    const text = `[
+      {
+        whole: false,
+        start: 604,
+        end: 651,
+        title: '宇宙飛行士の古川聡さんの報告会見',
+        summary:
+          '国際宇宙ステーションでの半年間の滞在から2週間ほど経った古川聡さんが報告会見を行い、体の回復などを報告しました。古川さんは帰還後、自力で靴を履くことができない状態から回復していると述べました。',
+        tags: ['宇宙']
+      }
+    ]`
     // textをarrayに変換。\nを削除
     const jsonString = text?.replace(/\n/g, '')
     const data = JSON.parse(jsonString as string)
